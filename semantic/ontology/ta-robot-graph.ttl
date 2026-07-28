@@ -1,0 +1,66 @@
+@prefix hw3: <http://taica.course/hw3/ontology#> .
+@prefix ta:  <http://taica.course/hw3/data/ta#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+# =============================================================================
+# TA-provided robot knowledge graph  (DO NOT MODIFY)
+#
+# 這份圖是「另一個獨立開發的機器人程式」的輸出:助教用自己的 IK 程式、
+# 另一支手臂 (UR10),對同一組共用 target URI (hw3:target_*) 發佈結果。
+# 你的 robot_graph.ttl 與這份圖使用同一套語彙 (hw3:) 與同一組 target,
+# 因此載入同一個 triple store 之後,SPARQL 可以直接跨圖查詢、比較。
+# =============================================================================
+
+ta:ta_ur10 a hw3:RobotArm ;
+    hw3:producedBy "ta-reference-pipeline" ;
+    hw3:hasDoF 6 ;
+    hw3:hasJoint ta:ta_ur10_joint1 , ta:ta_ur10_joint2 , ta:ta_ur10_joint3 ,
+                 ta:ta_ur10_joint4 , ta:ta_ur10_joint5 , ta:ta_ur10_joint6 .
+
+# UR10 classic DH parameters (meters / radians)
+ta:ta_ur10_joint1 a hw3:RevoluteJoint ;
+    hw3:jointIndex 1 ;
+    hw3:dh_a "0.0"^^xsd:double ;     hw3:dh_d "0.1273"^^xsd:double ;   hw3:dh_alpha "1.570796"^^xsd:double .
+ta:ta_ur10_joint2 a hw3:RevoluteJoint ;
+    hw3:jointIndex 2 ;
+    hw3:dh_a "-0.612"^^xsd:double ;  hw3:dh_d "0.0"^^xsd:double ;      hw3:dh_alpha "0.0"^^xsd:double .
+ta:ta_ur10_joint3 a hw3:RevoluteJoint ;
+    hw3:jointIndex 3 ;
+    hw3:dh_a "-0.5723"^^xsd:double ; hw3:dh_d "0.0"^^xsd:double ;      hw3:dh_alpha "0.0"^^xsd:double .
+ta:ta_ur10_joint4 a hw3:RevoluteJoint ;
+    hw3:jointIndex 4 ;
+    hw3:dh_a "0.0"^^xsd:double ;     hw3:dh_d "0.163941"^^xsd:double ; hw3:dh_alpha "1.570796"^^xsd:double .
+ta:ta_ur10_joint5 a hw3:RevoluteJoint ;
+    hw3:jointIndex 5 ;
+    hw3:dh_a "0.0"^^xsd:double ;     hw3:dh_d "0.1157"^^xsd:double ;   hw3:dh_alpha "-1.570796"^^xsd:double .
+ta:ta_ur10_joint6 a hw3:RevoluteJoint ;
+    hw3:jointIndex 6 ;
+    hw3:dh_a "0.0"^^xsd:double ;     hw3:dh_d "0.0922"^^xsd:double ;   hw3:dh_alpha "0.0"^^xsd:double .
+
+# --- IK results of the TA pipeline on the SHARED targets ---
+# UR10 的伸展距離 (~1.3 m) 比 UR5 (~0.9 m) 長,
+# 所以 target_mid 對 UR10 是 SOLVED、對你的 UR5 應該是 OUT_OF_REACH。
+
+ta:ik_ta_target_near a hw3:IKComputation ;
+    hw3:producedBy "ta-reference-pipeline" ;
+    hw3:computedForRobot ta:ta_ur10 ;
+    hw3:solvesForTarget hw3:target_near ;
+    hw3:hasIKStatus "SOLVED" ;
+    hw3:hasResidual "0.0012"^^xsd:double ;
+    hw3:hasJointConfiguration "[-2.994, -1.237, 1.156, -1.489, -1.571, 0.147]" .
+
+ta:ik_ta_target_mid a hw3:IKComputation ;
+    hw3:producedBy "ta-reference-pipeline" ;
+    hw3:computedForRobot ta:ta_ur10 ;
+    hw3:solvesForTarget hw3:target_mid ;
+    hw3:hasIKStatus "SOLVED" ;
+    hw3:hasResidual "0.0038"^^xsd:double ;
+    hw3:hasJointConfiguration "[-3.312, -0.842, 0.988, -1.717, -1.571, -0.171]" .
+
+ta:ik_ta_target_far a hw3:IKComputation ;
+    hw3:producedBy "ta-reference-pipeline" ;
+    hw3:computedForRobot ta:ta_ur10 ;
+    hw3:solvesForTarget hw3:target_far ;
+    hw3:hasIKStatus "OUT_OF_REACH" ;
+    hw3:hasResidual "0.8091"^^xsd:double ;
+    hw3:hasJointConfiguration "[-3.142, -1.571, 1.571, -1.571, -1.571, 0.0]" .

@@ -1,0 +1,17 @@
+# (Bonus / Semantic Gate 專用,TA 提供)
+# 篩選出經 OWL 推理後真正可執行的抓取目標:
+# 物件必須被 reasoner 分類為 hw3:ExecutableGraspTarget
+# (= hw3:GraspableObject ⊓ hw3:isKinematicallyReachable true)
+PREFIX hw3: <http://taica.course/hw3/ontology#>
+
+SELECT ?obj ?label ?status ?err
+WHERE {
+  ?obj a hw3:ExecutableGraspTarget .
+  OPTIONAL { ?obj hw3:hasObjectLabel ?label }
+  OPTIONAL {
+    ?task hw3:solvesForObject ?obj ;
+          hw3:hasIKStatus ?status .
+    OPTIONAL { ?task hw3:hasResidual ?err }
+  }
+}
+ORDER BY ?obj

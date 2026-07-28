@@ -1,0 +1,14 @@
+# Q1 (提供): 列出 triple store 中所有機器人的規格摘要。
+# 重點: store 裡有「兩個」機器人 — 你的 UR5 與助教的 UR10 —
+# 它們由不同程式獨立產生,但因為使用同一套 hw3: 語彙,一條查詢就能同時取得。
+PREFIX hw3: <http://taica.course/hw3/ontology#>
+
+SELECT ?robot ?producedBy ?dof (COUNT(?joint) AS ?jointCount)
+WHERE {
+  ?robot a hw3:RobotArm ;
+         hw3:producedBy ?producedBy ;
+         hw3:hasDoF ?dof ;
+         hw3:hasJoint ?joint .
+}
+GROUP BY ?robot ?producedBy ?dof
+ORDER BY ?robot
