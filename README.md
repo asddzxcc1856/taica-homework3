@@ -128,7 +128,7 @@ ground_task3_insertion.py ──> task3_insertion_graph.ttl ─┼─> OWL reaso
 TA's UR10 graph (provided)    ta-robot-graph.ttl        ─┘   Task 3 -> hw3:SuccessfulEpisode
 ```
 
-**Reusability across groups**: your instances live in your own namespace `http://taica.course/hw3/data/<group-id>#` (derived from `--group`), while every group shares the `hw3:` vocabulary and the same target URIs. Any number of submissions can therefore be merged into one triple store without URI collisions, and the same queries compare everyone's results — you can load another group's graphs next to yours and study their design.
+**Reusability across submissions** (this is an individual assignment): your instances live in your own namespace `http://taica.course/hw3/data/<student-id>#` (derived from `--student-id`), while every student shares the `hw3:` vocabulary and the same target URIs. Any number of submissions can therefore be merged into one triple store without URI collisions, and the same queries compare everyone's results — you can load a classmate's graphs next to yours and study their design.
 
 **Step 4-1. Understand the shared vocabulary.** Open [semantic/ontology/hw3-ontology.ttl](semantic/ontology/hw3-ontology.ttl):
 - Design rule: **reuse existing vocabularies wherever possible** — robots are `cora:Robot` (IEEE 1872 CORA), joints are `soma:RevoluteJoint`, poses are `soma:6DPose`, episodes are `soma:Episode` (SOMA/EASE), aligned to DUL upper-level terms; `hw3:` only mints what no standard covers (kinematic computations, D-H parameters, evaluation statuses)
@@ -147,18 +147,29 @@ Then open [semantic/ontology/ta-robot-graph.ttl](semantic/ontology/ta-robot-grap
 
 Notes: float literals must be written as `"..."^^xsd:double`; `solvesForTarget` must point to the shared target URI in the `hw3:` namespace (if you write it in `stu:`, the cross-graph join in Q3 will not find your results).
 
-**Step 4-3. Complete the interoperability query.** Open [semantic/queries/q3_interop_compare.rq](semantic/queries/q3_interop_compare.rq) and complete the SPARQL query following the hints: for every shared target, list **each robot's IK status** (3 targets × 2 robots = 6 rows; the same query automatically scales to N robots when more groups' graphs are loaded). q1, q2, and q4 are provided — read them before writing q3.
+**Step 4-3. Complete the interoperability query.** Open [semantic/queries/q3_interop_compare.rq](semantic/queries/q3_interop_compare.rq) and complete the SPARQL query following the hints: for every shared target, list **each robot's IK status** (3 targets × 2 robots = 6 rows; the same query automatically scales to N robots when more students' graphs are loaded). q1, q2, and q4 are provided — read them before writing q3.
 
 **Step 4-4. Run and score with one command.**
 
 ```bash
 conda activate taica-hw3
-bash semantic/run_task4.sh --group <your-group-id>   # uses your your_fk / your_ik
+bash semantic/run_task4.sh --student-id <your-student-id>   # uses your your_fk / your_ik
 # Before finishing Task 1/2 you can preview the pipeline with:
 # bash semantic/run_task4.sh --reference
 ```
 
-The script runs 7 steps: toolchain check → prepare Jena/TDB2 → the three grounding scripts → OWL reasoning (produces `semantic/output/inferred_graph.ttl`) → load the triple store (`semantic/store/`) → run q1–q4 (results saved to `semantic/output/q*.csv`) → scoring.
+The script runs 8 steps:
+
+| Step | What it does | Artifact it produces |
+|---|---|---|
+| 1 | Check the toolchain (java / javac / python) | — |
+| 2 | Prepare Apache Jena (auto-download on first run, incl. TDB2 CLI tools) | `semantic/.cache/apache-jena-4.10.0/` |
+| 3 | Grounding: run the three per-task evaluation scripts | `semantic/output/task{1,2,3}_*.ttl` |
+| 4 | OWL reasoning (Java Jena): materialize the three evaluation classes | `semantic/output/inferred_graph.ttl` |
+| 5 | Bulk-load asserted + inferred triples into the TDB2 triple store | `semantic/store/` |
+| 6 | Run q1–q4 against the store | terminal tables + `semantic/output/q*.csv` |
+| 7 | Automatic scoring (same code the TA uses) | score report on the terminal |
+| 8 | **Generate the graphical dashboard** | `semantic/output/report.html` |
 
 Expected output at the end (q4 is the semantic evaluation report of all three tasks):
 
@@ -168,6 +179,7 @@ Expected output at the end (q4 is the semantic evaluation report of all three ta
 | hw3:SolvedIKComputation | 1  |
 | hw3:SuccessfulEpisode   | 10 |
 
+== STEP 7/8 | Scoring Task 4 ==
   [S1] q1 robot summary ................ OK  (+2)
   [S1] DH parameters (6 / 6 joints) .... OK  (+6)
   [S2] Task 1 FK evaluation (3/3 PASS) . OK  (+4.0)
@@ -176,15 +188,31 @@ Expected output at the end (q4 is the semantic evaluation report of all three ta
   [S2] Task 3 episodes (10 SUCCESS) .... OK  (+2)
   [S3] q3 interop comparison matrix .... OK  (+10)
   Your Task 4 Score : 30.0 / 30.0
+
+== STEP 8/8 | Generating graphical dashboard (output/report.html) ==
+[REPORT] dashboard written to .../semantic/output/report.html
 ```
 
+Open the dashboard in a browser (`xdg-open semantic/output/report.html`). It contains: per-task evaluation cards, an **interactive knowledge-graph view** (robots / FK / IK / targets / episodes as colored nodes; anything the reasoner classified into an evaluation class gets a green halo; hover a node for its details), the q1–q4 result tables with PASS/FAIL highlighting, and the full scoring output.
+
 The correct Q3 result showcases the point of interoperability: `target_mid` is `OUT_OF_REACH` for your UR5 but `SOLVED` for the TA's UR10 — two pipelines that have never seen each other's code can answer "which target can only the UR10 reach?" through the shared vocabulary alone.
+
+**Step 4-5. Explore the store interactively (Fuseki web UI).** The triple store can also be served through Apache Jena Fuseki's browser interface — a real SPARQL console:
+
+```bash
+bash semantic/run_fuseki.sh        # first run downloads Fuseki (~40 MB)
+# then open http://localhost:3030 → dataset /hw3 → "query" tab
+```
+
+Paste any of `semantic/queries/q1–q4.rq` into the query editor and run them live against the store; results render as tables in the browser. The store is served read-only; stop the server with Ctrl-C (run STEP 4-4 again first if you rebuilt the store while Fuseki was running).
 
 **Task 4 FAQ**
 - `python` is not the taica-hw3 environment → `PYTHON=~/miniconda3/envs/taica-hw3/bin/python bash semantic/run_task4.sh`
 - Jena download fails → manually extract apache-jena-4.10.0 and `export JENA_HOME=<path>` before running
 - q2 is empty → reasoning did not take effect; check that the `hasIKStatus` literal is exactly `"SOLVED"` (case-sensitive, no extra whitespace)
 - Task 3 episodes item FAILs → run Task 3 first; `ground_task3_insertion.py` reads the pkl that `ravens/test.py` writes under `ravens/`
+- Port 3030 already in use → `PORT=3031 bash semantic/run_fuseki.sh`
+- `report.html` missing → it is generated by STEP 8 of `run_task4.sh`; you can also regenerate it alone with `python semantic/make_report.py`
 
 ---
 
@@ -195,7 +223,7 @@ The correct Q3 result showcases the point of interoperability: `target_mid` is `
 | Task 1: FK correctness (FK 10 + Jacobian 10, TA test cases) | 20 |
 | Task 2: IK correctness (TA test cases, default arguments only) | 40 |
 | Task 3: Transporter reward over 10 test episodes | 10 |
-| Task 4: S1 spec grounding 10 + S2 result grounding 10 + S3 SPARQL interop 10 | 30 |
+| Task 4: S1 spec grounding 8 + S2 per-task evaluation grounding 12 + S3 SPARQL interop 10 | 30 |
 | **Total** | **100** |
 
 ## Submission
@@ -205,7 +233,7 @@ The correct Q3 result showcases the point of interoperability: `target_mid` is `
 3. `semantic/ground_task1_fk.py` (with `robot_spec_to_triples()` completed)
 4. `semantic/ground_task2_ik.py` (with `ik_result_to_triples()` completed)
 5. `semantic/queries/q3_interop_compare.rq` (completed)
-6. A short report: screenshots of all four tasks, plus an explanation based on your Task 4 query results of "why `target_mid` is semantically the same target for both arms, yet geometrically reachable by only one of them"
+6. A short report: screenshots of all four tasks (including the Task 4 dashboard or Fuseki query results), plus an explanation based on your Task 4 query results of "why `target_mid` is semantically the same target for both arms, yet geometrically reachable by only one of them"
 
 > Note: `semantic/output/`, `semantic/store/`, and `semantic/.cache/` are auto-generated — do not submit them.
 
@@ -214,3 +242,4 @@ The correct Q3 result showcases the point of interoperability: `target_mid` is `
 - https://github.com/google-research/ravens
 - https://automaticaddison.com/the-ultimate-guide-to-jacobian-matrices-for-robotics/
 - Apache Jena / TDB2: https://jena.apache.org/documentation/tdb2/
+- Apache Jena Fuseki: https://jena.apache.org/documentation/fuseki2/
