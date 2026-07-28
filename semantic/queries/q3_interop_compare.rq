@@ -1,26 +1,28 @@
-# Q3 (學生實作): 跨機器人互操作性比較。
+# Q3 (STUDENT TODO): Cross-robot interoperability comparison.
 #
-# 目標: 對每一個共用 target (hw3:target_near / target_mid / target_far),
-#        列出「每支機器人」的 IK 求解狀態,產生一張 3 targets × 2 robots
-#        共 6 列的比較表,欄位為 ?target ?robot ?status。
+# Goal: for every shared target (hw3:target_near / target_mid / target_far),
+#       list EACH robot's IK status — a comparison table of
+#       3 targets x 2 robots = 6 rows, with columns ?target ?robot ?status.
 #
-# 這條查詢展示語意互操作性的核心價值:
-#   你的 UR5 pipeline 與助教的 UR10 pipeline 從未見過彼此的程式碼,
-#   但因為都用 hw3: 語彙對同一組 target URI 發佈結果,
-#   一條 SPARQL 就能回答「哪個目標只有 UR10 搆得到?」
+# This query demonstrates the core value of semantic interoperability:
+#   your UR5 pipeline and the TA's UR10 pipeline have never seen each
+#   other's code, yet because both publish results with the hw3: vocabulary
+#   against the same target URIs, one SPARQL query can answer
+#   "which target can only the UR10 reach?"
 #
-# 提示:
-#   1. pattern 的主詞是 hw3:IKComputation 的實例
-#   2. 你需要的三個 property: hw3:solvesForTarget, hw3:computedForRobot,
-#      hw3:hasIKStatus
-#   3. 用 ORDER BY ?target ?robot 讓輸出穩定 (評分腳本會逐列比對)
+# Hints:
+#   1. The subject of the pattern is an instance of hw3:IKComputation
+#   2. You need three properties: hw3:solvesForTarget,
+#      hw3:computedForRobot, hw3:hasIKStatus
+#   3. Use ORDER BY ?target ?robot for stable output
+#      (the scoring script compares row by row)
 #
-# ------------------------- TODO: 完成這條查詢 -------------------------
+# ------------------------- TODO: complete this query -------------------------
 PREFIX hw3: <http://taica.course/hw3/ontology#>
 
 SELECT ?target ?robot ?status
 WHERE {
-  # TODO: 在此填入 triple patterns
+  # TODO: add the triple patterns here
   # ?ik ...
 }
 ORDER BY ?target ?robot

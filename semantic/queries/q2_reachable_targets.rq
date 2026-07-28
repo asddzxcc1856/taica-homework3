@@ -1,7 +1,8 @@
-# Q2 (提供): 用「推理後」的類別找出每支手臂成功求解的目標。
-# 注意: hw3:SolvedIKComputation 沒有任何程式直接寫進資料 —
-# 它是 OWL reasoner 依等價類定義 (IKComputation ⊓ hasIKStatus "SOLVED")
-# 推導出來的。若跳過 run_task4.sh 的推理步驟,這條查詢會是空的。
+# Q2 (provided): Use the INFERRED class to find the targets each arm solved.
+# Note: no program ever writes hw3:SolvedIKComputation into the data —
+# the OWL reasoner derives it from the equivalent-class definition
+# (IKComputation AND hasIKStatus "SOLVED"). If you skip the reasoning step
+# of run_task4.sh, this query returns nothing.
 PREFIX hw3:  <http://taica.course/hw3/ontology#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 

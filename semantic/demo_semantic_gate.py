@@ -1,18 +1,22 @@
 # -*- coding: utf-8 -*-
-"""Bonus Demo — Ravens × Semantic Gate (需在 taica-hw3 conda 環境執行).
+"""Bonus Demo — Ravens x Semantic Gate (run inside the taica-hw3 conda env).
 
-用真實的 Ravens PyBullet 環境 + block-insertion-easy + oracle agent
-(不需下載 TF checkpoint) 展示語意閘門的三種行為:
+Demonstrates the semantic gate in the real Ravens PyBullet environment with
+the block-insertion-easy task and the built-in oracle agent (no TF checkpoint
+download needed):
 
-    Case 1: oracle 抓 L 型積木  -> ALLOW,動作執行,reward = 1.0
-    Case 2: 惡意動作抓 fixture  -> REFUSE (可達但語意上不可抓取)
-    Case 3: 惡意動作抓遠處空點  -> REFUSE (場景中無此物件 / 超出工作空間)
+    Case 1: oracle picks the L-shaped block -> ALLOW, action executes, reward 1.0
+    Case 2: adversarial pick on the fixture -> REFUSE (reachable but not
+            semantically graspable)
+    Case 3: adversarial pick far away       -> REFUSE (no known object there /
+            outside the workspace)
 
-前置需求:
-    1. 先跑過一次 `bash semantic/run_task4.sh`(會下載 Apache Jena)
-    2. 完成 Task 2 的 your_ik(或暫時保留下方的 pybullet_ik 代打那一行)
+Prerequisites:
+    1. Run `bash semantic/run_task4.sh` once (downloads Apache Jena)
+    2. Finish your_ik in Task 2 (or temporarily keep the pybullet_ik
+       stand-in line below)
 
-執行:
+Run:
     python semantic/demo_semantic_gate.py
 """
 
@@ -23,13 +27,15 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 HW_ROOT = os.path.abspath(os.path.join(HERE, '..'))
 RAVENS_ROOT = os.path.join(HW_ROOT, 'ravens', 'ravens')
 
-# 匯入順序: ravens 內層套件 -> hw3 根目錄;並移除 semantic/ 自身避免遮蔽
+# Import order matters: ravens inner packages first, then the hw3 root;
+# remove semantic/ itself so it cannot shadow the hw3 modules
+# (environment.py re-adds it when SEMANTIC_AUDIT=1).
 while HERE in sys.path:
     sys.path.remove(HERE)
 sys.path.insert(0, HW_ROOT)
 sys.path.insert(0, RAVENS_ROOT)
 
-os.environ['SEMANTIC_AUDIT'] = '1'  # 開啟語意審查閘門
+os.environ['SEMANTIC_AUDIT'] = '1'  # enable the semantic gate
 
 import numpy as np  # noqa: E402
 import pybullet as p  # noqa: E402
@@ -39,7 +45,8 @@ from environments.environment import Environment  # noqa: E402
 import tasks  # noqa: E402
 from ik import pybullet_ik  # noqa: E402
 
-# 尚未完成 Task 2 時用參考解代打;完成後請註解掉這行改用你的 your_ik
+# Stand-in reference solver until Task 2 is done; comment this line out
+# afterwards to use your own your_ik.
 envmod.your_ik = pybullet_ik
 
 
@@ -95,7 +102,7 @@ def main():
     if verdict['allowed']:
         failures.append('Case 3 failed')
 
-    banner('SEMANTIC GATE DEMO ' + ('PASSED ✓' if not failures else 'FAILED ✗'))
+    banner('SEMANTIC GATE DEMO ' + ('PASSED' if not failures else 'FAILED'))
     for msg in failures:
         print('  [FAIL] ' + msg)
     sys.exit(0 if not failures else 1)

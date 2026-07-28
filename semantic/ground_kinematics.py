@@ -1,22 +1,26 @@
 # -*- coding: utf-8 -*-
 """Task 4 — Semantic Robot Knowledge and Triple Store.
 
-把「數值層」的機器人知識 (robot specification + kinematic results)
-轉成共用語彙 <http://taica.course/hw3/ontology#> 的 RDF triples,
-輸出 semantic/output/robot_graph.ttl,後續由 run_task4.sh:
-    OWL 推理 (Java Jena) -> 載入 TDB2 triple store -> SPARQL 查詢 -> 評分
+Ground the numeric-layer robot knowledge (robot specification + kinematic
+results) into RDF triples using the shared vocabulary
+<http://taica.course/hw3/ontology#>, writing semantic/output/robot_graph.ttl.
+run_task4.sh then continues the pipeline:
+    OWL reasoning (Java Jena) -> load TDB2 triple store -> SPARQL -> scoring
 
 =============================================================================
-你要做的事 (STUDENT TODO,共 2 個函式):
-    1. robot_spec_to_triples() : 把 UR5 的 DH 參數 / 關節限制 / DoF 寫成 triples
-    2. ik_result_to_triples()  : 把每個共用 target 的 IK 結果寫成 triples
-fk_result_to_triples() 已完整實作,當作 triple 寫法的示範,請先讀懂它。
+What you implement (STUDENT TODO, 2 functions):
+    1. robot_spec_to_triples() : UR5 D-H parameters / joint limits / DoF -> triples
+    2. ik_result_to_triples()  : IK result for each shared target -> triples
+fk_result_to_triples() is fully implemented as a worked example of the
+triple-writing style — read it first.
 =============================================================================
 
-執行 (需在 taica-hw3 conda 環境,且已完成 Task 1 的 your_fk 與 Task 2 的 your_ik):
-    python semantic/ground_kinematics.py --group <你的組別代號>
+Run (inside the taica-hw3 conda environment, after finishing your_fk in
+Task 1 and your_ik in Task 2):
+    python semantic/ground_kinematics.py --group <your group id>
 
-尚未完成 Task 1/2 時,可先用參考解看整條 pipeline 的樣子:
+Before finishing Task 1/2 you can preview the whole pipeline with the
+reference solvers:
     python semantic/ground_kinematics.py --reference
 """
 
@@ -38,7 +42,7 @@ from ik import your_ik, pybullet_ik  # noqa: E402
 from pybullet_robot_envs.envs.ur5_envs.ur5_env import ur5Env  # noqa: E402
 
 # ---------------------------------------------------------------------------
-# 常數 (TA 提供,勿改)
+# Constants (TA-provided, do not modify)
 # ---------------------------------------------------------------------------
 HW3_NS = 'http://taica.course/hw3/ontology#'
 STU_NS = 'http://taica.course/hw3/data/student#'
@@ -46,11 +50,11 @@ STU_NS = 'http://taica.course/hw3/data/student#'
 OUTPUT_TTL = os.path.join(HERE, 'output', 'robot_graph.ttl')
 
 SIM_TIMESTEP = 1.0 / 240.0
-UR5_MAX_REACH = 0.90          # UR5 工作空間半徑 (m),超過視為 OUT_OF_REACH
-SHOULDER_HEIGHT = 0.0892      # DH d1: 肩關節高度 (m)
-IK_SOLVED_THRESH = 0.02       # SOLVED 殘差門檻 (m)
+UR5_MAX_REACH = 0.90          # UR5 workspace radius (m); beyond => OUT_OF_REACH
+SHOULDER_HEIGHT = 0.0892      # DH d1: shoulder height (m)
+IK_SOLVED_THRESH = 0.02       # residual threshold for SOLVED (m)
 
-# 與 ik.py 一致的關節限制,Task 4 會把它 ground 成 triples
+# Joint limits consistent with ik.py; Task 4 grounds them into triples
 JOINT_LIMITS = [
     [-3 * np.pi / 2, -np.pi / 2],   # joint1
     [-2.3562, -1.0],                # joint2
@@ -60,8 +64,9 @@ JOINT_LIMITS = [
     [-17.0, 17.0],                  # joint6
 ]
 
-# 共用 target(與 ontology 的 hw3:target_* 完全相同的座標;
-# URI 也必須用同一組,SPARQL 才能跨圖 join)
+# Shared targets (exactly the same coordinates as hw3:target_* in the
+# ontology; the URIs must also be the same set, otherwise SPARQL cannot
+# join across graphs)
 SHARED_TARGETS = [
     {'uri': 'target_near', 'position': [0.35, 0.28, 0.95]},
     {'uri': 'target_mid',  'position': [0.90, 0.13, 0.80]},
@@ -72,22 +77,23 @@ HOME_JOINTS = (np.array([-1.0, -0.5, 0.5, -0.5, -0.5, 0.0]) * np.pi).tolist()
 
 
 # ---------------------------------------------------------------------------
-# 已完成的示範: FK 結果 -> triples
+# Worked example (already implemented): FK result -> triples
 # ---------------------------------------------------------------------------
 def fk_result_to_triples(case_index, joint_config, eef_pose_7d):
-    """(示範,已完成) 把一筆 FK 結果轉成 Turtle 片段 (list of str).
+    """(Example, complete) Convert one FK result into Turtle lines (list of str).
 
-    產出形如:
+    Produces:
         stu:fk_case_0 a hw3:FKComputation ;
             hw3:producedBy "<group id>" ;
             hw3:computedForRobot stu:my_ur5 ;
             hw3:hasInputJointConfiguration "[...]" ;
             hw3:hasEndEffectorPose "[...]" .
 
-    注意三件事,後面你自己寫的函式也要遵守:
-      1. 實例放在 stu: namespace,類別/屬性用 hw3: namespace
-      2. 數值列表用 JSON 字串 literal(語彙的 rdfs:comment 有規定格式)
-      3. 每個實例都掛 hw3:producedBy 供 provenance 查詢
+    Three conventions your own functions must follow as well:
+      1. Instances live in the stu: namespace; classes/properties in hw3:
+      2. Numeric lists are JSON-string literals (the vocabulary's
+         rdfs:comment specifies the format)
+      3. Every instance carries hw3:producedBy for provenance queries
     """
     q_json = json.dumps([round(float(v), 6) for v in joint_config])
     pose_json = json.dumps([round(float(v), 6) for v in eef_pose_7d])
@@ -104,30 +110,32 @@ def fk_result_to_triples(case_index, joint_config, eef_pose_7d):
 
 
 # ---------------------------------------------------------------------------
-# STUDENT TODO 1: 機器人規格 -> triples
+# STUDENT TODO 1: robot specification -> triples
 # ---------------------------------------------------------------------------
 def robot_spec_to_triples(dh_params, joint_limits):
-    """把 UR5 的規格 ground 成 triples,回傳 Turtle 片段 (list of str).
+    """Ground the UR5 specification into triples; return Turtle lines (list of str).
 
-    必須包含:
-      1. 機器人實例 stu:my_ur5,型別 hw3:RobotArm,
-         掛上 hw3:producedBy "<GROUP_ID>"、hw3:hasDoF 6,
-         並以 hw3:hasJoint 連到 6 個關節實例
-      2. 6 個關節實例 stu:my_ur5_joint1 ~ joint6,型別 hw3:RevoluteJoint,
-         每個都要有:
+    Must include:
+      1. A robot instance stu:my_ur5 of type hw3:RobotArm, carrying
+         hw3:producedBy "<GROUP_ID>" and hw3:hasDoF 6, and linked to the
+         6 joint instances via hw3:hasJoint
+      2. Six joint instances stu:my_ur5_joint1 ~ joint6 of type
+         hw3:RevoluteJoint, each with:
            - hw3:jointIndex     (1~6, integer)
-           - hw3:dh_a           (double, 單位 m)
-           - hw3:dh_d           (double, 單位 m)
-           - hw3:dh_alpha       (double, 單位 rad)
-           - hw3:hasJointLowerLimit / hw3:hasJointUpperLimit (double, rad)
+           - hw3:dh_a           (double, meters)
+           - hw3:dh_d           (double, meters)
+           - hw3:dh_alpha       (double, radians)
+           - hw3:hasJointLowerLimit / hw3:hasJointUpperLimit (double, radians)
 
-    hint:
-      - dh_params 是 get_ur5_DH_params() 的回傳值 (6 個 dict: a / d / alpha)
-      - 浮點數 literal 必須是 xsd:double(Turtle 裸寫的 0.0892 是
-        xsd:decimal,會與屬性值域衝突),寫法:
+    Hints:
+      - dh_params is the return value of get_ur5_DH_params()
+        (6 dicts with keys a / d / alpha)
+      - Float literals MUST be xsd:double (a bare 0.0892 in Turtle is
+        xsd:decimal, which conflicts with the property range):
             '    hw3:dh_a "{}"^^xsd:double ;'.format(round(value, 6))
-      - 參考 fk_result_to_triples() 與 ontology/ta-robot-graph.ttl 的寫法
-        (助教的 UR10 圖就是這個函式「另一個程式的版本」的輸出)
+      - See fk_result_to_triples() and ontology/ta-robot-graph.ttl for
+        the writing style (the TA's UR10 graph is exactly what "another
+        program's version" of this function produced)
     """
     lines = []
 
@@ -141,23 +149,24 @@ def robot_spec_to_triples(dh_params, joint_limits):
 
 
 # ---------------------------------------------------------------------------
-# STUDENT TODO 2: IK 結果 -> triples
+# STUDENT TODO 2: IK result -> triples
 # ---------------------------------------------------------------------------
 def ik_result_to_triples(target_uri, joint_config, ik_status, residual):
-    """把一筆 IK 結果 ground 成 triples,回傳 Turtle 片段 (list of str).
+    """Ground one IK result into triples; return Turtle lines (list of str).
 
-    必須包含一個 IK 實例 (URI 建議 stu:ik_<target_uri>),型別
-    hw3:IKComputation,並掛上:
+    Must include one IK instance (suggested URI: stu:ik_<target_uri>) of
+    type hw3:IKComputation, carrying:
       - hw3:producedBy         "<GROUP_ID>"
       - hw3:computedForRobot   stu:my_ur5
-      - hw3:solvesForTarget    hw3:<target_uri>   <-- 注意是 hw3: namespace!
-                                共用 target URI 是跨圖比較的 join key,
-                                寫成 stu: 的話 Q3 會查不到你的結果
+      - hw3:solvesForTarget    hw3:<target_uri>   <-- note: hw3: namespace!
+                                The shared target URI is the join key for
+                                cross-graph comparison; writing it in stu:
+                                means Q3 will never find your results
       - hw3:hasIKStatus        "SOLVED" / "OUT_OF_REACH" / ... (string)
-      - hw3:hasResidual        殘差 (double, 寫法: "0.003"^^xsd:double)
-      - hw3:hasJointConfiguration  JSON 字串 (參考 fk_result_to_triples)
+      - hw3:hasResidual        residual (double, e.g. "0.003"^^xsd:double)
+      - hw3:hasJointConfiguration  JSON string (see fk_result_to_triples)
 
-    hint: 對照 ontology/ta-robot-graph.ttl 裡 ta:ik_ta_target_near 的寫法。
+    Hint: compare with ta:ik_ta_target_near in ontology/ta-robot-graph.ttl.
     """
     lines = []
 
@@ -171,10 +180,10 @@ def ik_result_to_triples(target_uri, joint_config, ik_status, residual):
 
 
 # ---------------------------------------------------------------------------
-# TA 提供: IK 結果分類 (數值層 -> 狀態字串)
+# TA-provided: classify an IK outcome (numeric layer -> status string)
 # ---------------------------------------------------------------------------
 def classify_ik_result(eef_pos_after_ik, target_pos, base_pos):
-    """依殘差與工作空間幾何,判定 IK 狀態字串."""
+    """Determine the IK status string from residual and workspace geometry."""
     target_pos = np.asarray(target_pos, dtype=float)
     shoulder = np.asarray(base_pos, dtype=float) + [0.0, 0.0, SHOULDER_HEIGHT]
     dist = float(np.linalg.norm(target_pos - shoulder))
@@ -189,7 +198,7 @@ def classify_ik_result(eef_pos_after_ik, target_pos, base_pos):
 
 
 # ---------------------------------------------------------------------------
-# TA 提供: 模擬環境與求解流程
+# TA-provided: simulation setup and solver flow
 # ---------------------------------------------------------------------------
 def _reset_arm(robot, joint_values):
     joint_ids = list(robot._joint_name_to_ids.values())
@@ -198,7 +207,8 @@ def _reset_arm(robot, joint_values):
 
 
 def _sim_eef_pose(robot, joint_values):
-    """無副作用地讀取指定關節角下的末端 pose (reset -> read -> restore)."""
+    """Read the end-effector pose at given joint angles without side effects
+    (reset -> read -> restore)."""
     joint_ids = list(robot._joint_name_to_ids.values())
     saved = [p.getJointState(robot.robot_id, j)[0] for j in joint_ids]
     _reset_arm(robot, joint_values)
@@ -222,7 +232,7 @@ def run_pipeline(reference_mode):
     dh_params = get_ur5_DH_params()
     home_quat = np.asarray(robot.get_eef_pose())[3:]
 
-    # ---------- FK: 用 fk 測資的前 3 組關節角 ----------
+    # ---------- FK: first 3 joint configurations from the fk test cases ----------
     fk_file = os.path.join(HW_ROOT, 'test_case', 'fk_test_case_easy.json')
     with open(fk_file, 'r') as f:
         fk_cases = json.load(f)['joint_poses'][:3]
@@ -237,7 +247,7 @@ def run_pipeline(reference_mode):
         print('[FK] case {} -> eef pos {}'.format(
             i, np.round(pose[:3], 4).tolist()))
 
-    # ---------- IK: 共用 targets ----------
+    # ---------- IK: shared targets ----------
     ik_records = []
     for target in SHARED_TARGETS:
         target_pose_7d = list(target['position']) + list(home_quat)

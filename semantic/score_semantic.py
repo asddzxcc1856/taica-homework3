@@ -1,17 +1,19 @@
 # -*- coding: utf-8 -*-
-"""Task 4 評分腳本 (TA 提供,評分時使用相同程式).
+"""Task 4 scoring script (TA-provided; grading uses the same code).
 
-滿分 30 分:
-    S1 Robot specification grounding ... 10 分
-       - q1 查得到你的機器人 (hw3:hasDoF 6、6 個關節)      4 分
-       - 6 個關節的 DH 參數與課程 DH 表一致 (tol 1e-3)      6 分
-    S2 Kinematic result grounding ...... 10 分
-       - 3 個共用 target 的 IK 狀態全部正確                 6 分
-       - q2 (推理後的 SolvedIKComputation) 含你的 target_near 4 分
-    S3 SPARQL interoperability (Q3) .... 10 分
-       - 6 列 (3 targets × 2 robots) 且狀態矩陣正確
+Total 30 points:
+    S1 Robot specification grounding ... 10 pts
+       - q1 finds your robot (hw3:hasDoF 6, 6 joints)          4 pts
+       - all 6 joints' D-H parameters match the course table
+         (tolerance 1e-3)                                      6 pts
+    S2 Kinematic result grounding ...... 10 pts
+       - IK statuses of the 3 shared targets are all correct   6 pts
+       - q2 (inferred SolvedIKComputation) contains your
+         target_near row                                       4 pts
+    S3 SPARQL interoperability (Q3) .... 10 pts
+       - 6 rows (3 targets x 2 robots) with the correct status matrix
 
-執行方式: 由 run_task4.sh 的 STEP 7 自動呼叫 (需要 JENA_HOME 環境變數)。
+Invoked automatically by STEP 7 of run_task4.sh (requires JENA_HOME).
 """
 
 import csv
@@ -36,13 +38,13 @@ EXPECTED_DH = {  # jointIndex -> (a, d, alpha)
     6: (0.0, 0.2023, 0.0),
 }
 
-EXPECTED_STATUS = {  # 你的 UR5 對共用 target 應得到的狀態
+EXPECTED_STATUS = {  # statuses your UR5 should report for the shared targets
     HW3 + 'target_near': 'SOLVED',
     HW3 + 'target_mid': 'OUT_OF_REACH',
     HW3 + 'target_far': 'OUT_OF_REACH',
 }
 
-EXPECTED_TA_STATUS = {  # 助教 UR10 圖中的狀態 (固定值)
+EXPECTED_TA_STATUS = {  # statuses in the TA's UR10 graph (fixed values)
     HW3 + 'target_near': 'SOLVED',
     HW3 + 'target_mid': 'SOLVED',
     HW3 + 'target_far': 'OUT_OF_REACH',
@@ -58,7 +60,7 @@ def read_csv(name):
 
 
 def tdbquery(query_text):
-    """對 triple store 執行一條臨時 grading query,回傳 CSV rows."""
+    """Run an ad-hoc grading query against the triple store; return CSV rows."""
     jena_home = os.environ.get('JENA_HOME', '')
     tool = os.path.join(jena_home, 'bin', 'tdb2.tdbquery')
     qfile = os.path.join(OUTPUT, '_grading_tmp.rq')

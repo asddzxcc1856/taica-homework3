@@ -1,14 +1,18 @@
 # -*- coding: utf-8 -*-
-"""SemanticTaskAuditor — Ravens 動作的語意審查閘門 (TA 提供的 Bonus 功能).
+"""SemanticTaskAuditor — semantic gate for Ravens actions (TA-provided bonus).
 
-在 Transporter Network (或 oracle) 產生 pick-and-place 動作後、實際執行前:
-    1. 掃描場景物件 (env.obj_ids),對每個物件計算 IK 可達性 (數值層)
-    2. Symbol Grounding: graspable(語意) + reachable(幾何) -> RDF
-    3. 呼叫 Java Jena OWL reasoner 導出 hw3:ExecutableGraspTarget
-    4. 若 pick 目標不在推理結果中 -> 拒絕執行,並給出可解釋的理由
+After the Transporter Network (or oracle) produces a pick-and-place action,
+and BEFORE it is executed:
+    1. Scan the scene objects (env.obj_ids) and compute IK reachability for
+       each of them (numeric layer)
+    2. Symbol grounding: graspable (semantic) + reachable (geometric) -> RDF
+    3. Call the Java Jena OWL reasoner to derive hw3:ExecutableGraspTarget
+    4. If the pick target is not in the inferred set -> refuse the action
+       with an explainable reason
 
-啟用方式: 設環境變數 SEMANTIC_AUDIT=1 再執行 ravens (見 README Bonus 章節)。
-Python 3.7 相容 (在 taica-hw3 conda 環境內執行)。
+Enable by setting the environment variable SEMANTIC_AUDIT=1 before running
+ravens (see the Bonus section of the README).
+Python 3.7 compatible (runs inside the taica-hw3 conda environment).
 """
 
 import glob
@@ -36,9 +40,11 @@ JAVA_MAIN = 'course.taica.hw3.SemanticReasoner'
 HW3_NS = 'http://taica.course/hw3/ontology#'
 KB_NS = 'http://taica.course/hw3/data/ravens#'
 
-# 語意層標註: 依 URDF body name 判斷「語意上可否抓取」。
-# 注意 ravens 的 ell.urdf 與 fixture.urdf 共用 <robot name="ell.urdf">,
-# 所以 fixed 類別的物件(固定底座)一律視為不可抓取,名稱規則僅用於 rigid。
+# Semantic-layer annotation: decide "semantically graspable" from the URDF
+# body name. Note that ravens' ell.urdf and fixture.urdf share the same
+# <robot name="ell.urdf">, so objects in the 'fixed' category (anchored
+# bases) are always treated as non-graspable; name rules apply to 'rigid'
+# objects only.
 GRASPABLE_NAME_RULES = [
     ('ell', True),
     ('block', True),
@@ -62,7 +68,7 @@ def _sanitize(name):
 
 
 def _jena_lib():
-    """回傳 Jena jars 的 classpath 萬用字元路徑."""
+    """Return the classpath wildcard for the Jena jars."""
     jena_home = os.environ.get('JENA_HOME')
     if jena_home and os.path.isdir(os.path.join(jena_home, 'lib')):
         return os.path.join(jena_home, 'lib', '*')
@@ -84,10 +90,11 @@ class SemanticTaskAuditor(object):
         self.pick_match_radius = pick_match_radius
         self.fk_residual_thresh = fk_residual_thresh
         self.verbose = verbose
-        self.last_verdict = None  # 最近一次審查結果,供測試/報告使用
+        self.last_verdict = None  # most recent verdict, for tests / reports
 
     # ------------------------------------------------------------------
-    # 數值層: 無副作用的 FK 殘差檢查 (reset -> read -> restore)
+    # Numeric layer: side-effect-free FK residual check
+    # (reset -> read -> restore)
     # ------------------------------------------------------------------
     def _fk_residual(self, robot_id, joint_indices, q, ee_link, target_pos):
         saved = [p.getJointState(robot_id, j)[:2] for j in joint_indices]
@@ -137,7 +144,7 @@ class SemanticTaskAuditor(object):
         return objects
 
     # ------------------------------------------------------------------
-    # 語意層: Grounding -> TTL (使用 hw3: 共用語彙)
+    # Semantic layer: grounding -> TTL (using the shared hw3: vocabulary)
     # ------------------------------------------------------------------
     def _write_kb(self, objects):
         lines = [
@@ -175,7 +182,7 @@ class SemanticTaskAuditor(object):
             f.write('\n'.join(lines))
 
     # ------------------------------------------------------------------
-    # 推理層: 編譯 (如需要) 並執行 Java Jena SemanticReasoner
+    # Reasoning layer: compile (if needed) and run the Jena reasoner
     # ------------------------------------------------------------------
     def _run_reasoner(self):
         lib_cp = _jena_lib()
@@ -202,7 +209,7 @@ class SemanticTaskAuditor(object):
         return executable
 
     # ------------------------------------------------------------------
-    # 閘門主流程
+    # Gate main flow
     # ------------------------------------------------------------------
     def _match_object(self, objects, pick_pos):
         best, best_d = None, self.pick_match_radius
@@ -230,7 +237,7 @@ class SemanticTaskAuditor(object):
         elif target['kb_id'] in executable:
             allowed = True
             reason = ('kb:{} is an inferred hw3:ExecutableGraspTarget '
-                      '(graspable ∧ reachable)'.format(target['kb_id']))
+                      '(graspable AND reachable)'.format(target['kb_id']))
         elif not target['graspable']:
             allowed = False
             reason = ('kb:{} is kinematically reachable BUT not '

@@ -5,10 +5,12 @@
 # =============================================================================
 # TA-provided robot knowledge graph  (DO NOT MODIFY)
 #
-# 這份圖是「另一個獨立開發的機器人程式」的輸出:助教用自己的 IK 程式、
-# 另一支手臂 (UR10),對同一組共用 target URI (hw3:target_*) 發佈結果。
-# 你的 robot_graph.ttl 與這份圖使用同一套語彙 (hw3:) 與同一組 target,
-# 因此載入同一個 triple store 之後,SPARQL 可以直接跨圖查詢、比較。
+# This graph is the output of "another independently developed robotics
+# program": the TA used their own IK program and a different arm (UR10)
+# to publish results against the same shared target URIs (hw3:target_*).
+# Your robot_graph.ttl and this graph use the same vocabulary (hw3:) and
+# the same targets, so once both are loaded into the same triple store,
+# SPARQL can query and compare across the graphs directly.
 # =============================================================================
 
 ta:ta_ur10 a hw3:RobotArm ;
@@ -38,8 +40,9 @@ ta:ta_ur10_joint6 a hw3:RevoluteJoint ;
     hw3:dh_a "0.0"^^xsd:double ;     hw3:dh_d "0.0922"^^xsd:double ;   hw3:dh_alpha "0.0"^^xsd:double .
 
 # --- IK results of the TA pipeline on the SHARED targets ---
-# UR10 的伸展距離 (~1.3 m) 比 UR5 (~0.9 m) 長,
-# 所以 target_mid 對 UR10 是 SOLVED、對你的 UR5 應該是 OUT_OF_REACH。
+# The UR10's reach (~1.3 m) is longer than the UR5's (~0.9 m), so
+# target_mid is SOLVED for the UR10 while your UR5 should report
+# OUT_OF_REACH for it.
 
 ta:ik_ta_target_near a hw3:IKComputation ;
     hw3:producedBy "ta-reference-pipeline" ;

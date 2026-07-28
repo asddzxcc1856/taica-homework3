@@ -37,9 +37,9 @@
 
   <build>
     <plugins>
-      <!-- 有 Maven 時可 `mvn package` 產出 jar-with-dependencies;
-           沒有 Maven 時 run_task4.sh 會直接用 Apache Jena 發行版的
-           lib/*.jar 以 javac 編譯,兩條路都通。 -->
+      <!-- With Maven, `mvn package` produces a jar-with-dependencies;
+           without Maven, run_task4.sh compiles directly with javac against
+           the Apache Jena distribution's lib/*.jar — both paths work. -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>

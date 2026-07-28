@@ -1,24 +1,25 @@
 #!/usr/bin/env bash
 # =============================================================================
-# TAICA HW3 — Task 4 一鍵執行腳本
+# TAICA HW3 — Task 4 one-command runner
 #
-#   STEP 1  檢查工具鏈 (java / javac / python)
-#   STEP 2  準備 Apache Jena 4.10.0 (含 TDB2 triple store 指令列工具)
-#   STEP 3  Grounding: 執行 ground_kinematics.py 產生 output/robot_graph.ttl
-#   STEP 4  OWL 推理: Java Jena 讀入 本體 + 你的圖 + 助教的圖,
-#           materialize 推論結果 -> output/inferred_graph.ttl
-#   STEP 5  載入 TDB2 triple store (semantic/store/)
-#   STEP 6  對 triple store 執行 queries/q*.rq,結果存 output/q*.csv
-#   STEP 7  執行 score_semantic.py 評分
+#   STEP 1  Check the toolchain (java / javac / python)
+#   STEP 2  Prepare Apache Jena 4.10.0 (incl. TDB2 triple store CLI tools)
+#   STEP 3  Grounding: run ground_kinematics.py -> output/robot_graph.ttl
+#   STEP 4  OWL reasoning: Java Jena loads ontology + your graph + TA's graph,
+#           materializes deductions -> output/inferred_graph.ttl
+#   STEP 5  Load the TDB2 triple store (semantic/store/)
+#   STEP 6  Run queries/q*.rq against the store, save results to output/q*.csv
+#   STEP 7  Run score_semantic.py for scoring
 #
-# 用法 (在 hw3 根目錄或 semantic/ 下皆可):
-#   bash semantic/run_task4.sh                     # 用你的 your_fk / your_ik
-#   bash semantic/run_task4.sh --reference         # 用參考解試跑 pipeline
-#   bash semantic/run_task4.sh --group my-group-05 # 指定 provenance id
+# Usage (from the hw3 root or from semantic/):
+#   bash semantic/run_task4.sh                     # uses your your_fk / your_ik
+#   bash semantic/run_task4.sh --reference         # preview with reference solvers
+#   bash semantic/run_task4.sh --group my-group-05 # set the provenance id
 #
-# 環境變數:
-#   PYTHON     指定 python 直譯器 (預設: python;需為 taica-hw3 conda 環境)
-#   JENA_HOME  指定已解壓的 apache-jena 目錄 (預設: 自動下載到 semantic/.cache)
+# Environment variables:
+#   PYTHON     python interpreter (default: python; must be the taica-hw3 env)
+#   JENA_HOME  an already-extracted apache-jena directory
+#              (default: auto-download into semantic/.cache)
 # =============================================================================
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -62,7 +63,7 @@ echo "JENA_HOME = $JENA_HOME ($(ls "$JENA_HOME/lib"/*.jar | wc -l) jars)"
 
 echo
 echo "== STEP 3/7 | Grounding: numeric kinematics -> RDF (robot_graph.ttl) =="
-GROUND_SCRIPT="${GROUND_SCRIPT:-ground_kinematics.py}"   # TA 測試時可覆寫
+GROUND_SCRIPT="${GROUND_SCRIPT:-ground_kinematics.py}"   # overridable for TA testing
 "$PYTHON" "$GROUND_SCRIPT" ${GROUND_ARGS[@]+"${GROUND_ARGS[@]}"}
 
 echo

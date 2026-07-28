@@ -11,7 +11,7 @@
 
 # =============================================================================
 # 1. Robot hardware & specification
-#    對應「Robot specifications」:手臂、關節、DH 參數、自由度
+#    Covers "robot specifications": arm, joints, D-H parameters, DoF
 # =============================================================================
 hw3:RobotArm a owl:Class ;
     rdfs:label "Robot Arm"@en .
@@ -74,7 +74,7 @@ hw3:hasJointUpperLimit a owl:DatatypeProperty ;
 
 # =============================================================================
 # 2. Kinematic computations
-#    對應「Kinematic results」:FK / IK 的輸入、輸出與狀態
+#    Covers "kinematic results": FK / IK inputs, outputs, and statuses
 # =============================================================================
 hw3:KinematicComputation a owl:Class ;
     rdfs:label "Kinematic Computation"@en .
@@ -203,11 +203,13 @@ hw3:ExecutableGraspTarget a owl:Class ;
 
 # =============================================================================
 # 5. Shared target poses (TA-provided, world frame)
-#    這三個 URI 是「共用識別符」:你的 UR5 圖與助教的 UR10 圖都會
-#    對同一組 target URI 發佈 IK 結果,SPARQL 才能跨圖比較。
+#    These three URIs are SHARED IDENTIFIERS: your UR5 graph and the TA's
+#    UR10 graph both publish IK results against the same target URIs,
+#    which is what makes cross-graph SPARQL comparison possible.
 # =============================================================================
-# (浮點 literal 一律寫成 "..."^^xsd:double — Turtle 裸寫的 0.35 是
-#  xsd:decimal,會與屬性的 xsd:double 值域衝突,reasoner 會報 dtRange)
+# (Float literals are always written as "..."^^xsd:double — a bare 0.35 in
+#  Turtle is xsd:decimal, which conflicts with the xsd:double property range
+#  and makes the reasoner report dtRange violations.)
 hw3:target_near a hw3:TargetPose ;
     rdfs:label "target_near (inside UR5 workspace)"@en ;
     hw3:hasPositionX "0.35"^^xsd:double ;
