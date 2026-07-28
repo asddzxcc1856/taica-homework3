@@ -27,12 +27,11 @@ import java.util.Iterator;
  *   1. Load the base ontology + any number of data graphs (student's UR5
  *      graph, TA's UR10 graph, ...).
  *   2. Bind Jena's OWL rule reasoner and materialize the deductions —
- *      this is where hw3:SolvedIKComputation and hw3:ExecutableGraspTarget
- *      memberships are derived.
+ *      this is where hw3:SolvedIKComputation memberships are derived.
  *   3. Export asserted + inferred triples to a Turtle file, which
  *      run_task4.sh then bulk-loads into the TDB2 triple store.
  *   4. (optional) Run one SPARQL query directly and print machine-parsable
- *      "RESULT|..." lines — used by the Ravens semantic gate.
+ *      "RESULT|..." lines — handy for debugging without the triple store.
  *
  * Usage:
  *   java course.taica.hw3.SemanticReasoner \

@@ -16,7 +16,7 @@ NYCU Physical AI / TAICA — UR5 Kinematics + Transporter Network + Semantic Kno
 | 1 | Forward Kinematics | `fk.py` → `your_fk()` | `python fk.py` | 20 |
 | 2 | Inverse Kinematics | `ik.py` → `your_ik()` | `python ik.py` | 40 |
 | 3 | Transporter Network | (integration, no code change) | `python ravens/test.py ...` | 10 |
-| 4 | Semantic Knowledge + Triple Store | 2 functions in `semantic/ground_kinematics.py` + `semantic/queries/q3_interop_compare.rq` | `bash semantic/run_task4.sh` | 30 |
+| 4 | Semantic Knowledge + Triple Store | 1 function in `semantic/ground_task1_fk.py` + 1 function in `semantic/ground_task2_ik.py` + `semantic/queries/q3_interop_compare.rq` | `bash semantic/run_task4.sh` | 30 |
 
 ---
 
@@ -119,47 +119,61 @@ Expected output: `Total Reward: 1.0 Done: True` for all 10 episodes.
 
 ## Task 4. Semantic Robot Knowledge and Triple Store (30 points)
 
-Turn the *numbers* from Task 1/2 into *semantics*: represent the robot specification (D-H parameters, joint limits, DoF) and the kinematic results (FK poses, IK statuses) as RDF using the shared vocabulary, run OWL reasoning, load everything into a TDB2 triple store, and query it with SPARQL — side by side with a **UR10 knowledge graph independently produced by the TA**.
+Turn the *numbers* from Tasks 1–3 into *semantics*: the shared vocabulary `<http://taica.course/hw3/ontology#>` defines concepts that **evaluate all three tasks** — FK correctness, IK solvability, and insertion success — as machine-readable facts. Each task has its own grounding script producing its own knowledge graph; OWL reasoning then derives one evaluation class per task, everything is loaded into a TDB2 triple store, and SPARQL reads the evaluation back out — side by side with a **UR10 knowledge graph independently produced by the TA**.
 
 ```
-your UR5 pipeline ──ground──> robot_graph.ttl ──┐
-                                                ├─> OWL reasoning ─> TDB2 store ─> SPARQL
-TA's UR10 pipeline (provided) ta-robot-graph.ttl┘
+ground_task1_fk.py        ──> task1_fk_graph.ttl        ─┐   Task 1 -> hw3:PassedFKComputation
+ground_task2_ik.py        ──> task2_ik_graph.ttl        ─┤   Task 2 -> hw3:SolvedIKComputation
+ground_task3_insertion.py ──> task3_insertion_graph.ttl ─┼─> OWL reasoning ─> TDB2 store ─> SPARQL
+TA's UR10 graph (provided)    ta-robot-graph.ttl        ─┘   Task 3 -> hw3:SuccessfulEpisode
 ```
+
+**Reusability across groups**: your instances live in your own namespace `http://taica.course/hw3/data/<group-id>#` (derived from `--group`), while every group shares the `hw3:` vocabulary and the same target URIs. Any number of submissions can therefore be merged into one triple store without URI collisions, and the same queries compare everyone's results — you can load another group's graphs next to yours and study their design.
 
 **Step 4-1. Understand the shared vocabulary.** Open [semantic/ontology/hw3-ontology.ttl](semantic/ontology/hw3-ontology.ttl):
-- All classes/properties are defined in the namespace `http://taica.course/hw3/ontology#` (prefix `hw3:`)
+- Design rule: **reuse existing vocabularies wherever possible** — robots are `cora:Robot` (IEEE 1872 CORA), joints are `soma:RevoluteJoint`, poses are `soma:6DPose`, episodes are `soma:Episode` (SOMA/EASE), aligned to DUL upper-level terms; `hw3:` only mints what no standard covers (kinematic computations, D-H parameters, evaluation statuses)
 - The three **shared targets** (`hw3:target_near` / `target_mid` / `target_far`) are the join keys for cross-graph comparison
-- `hw3:SolvedIKComputation` is an **inference-defined** class: no program ever asserts it directly; the OWL reasoner derives it from "`IKComputation` and `hasIKStatus "SOLVED"`"
+- Section 4 defines one **inference-defined evaluation class per task** (`PassedFKComputation`, `SolvedIKComputation`, `SuccessfulEpisode`): no program ever asserts them directly; the OWL reasoner derives membership from the grounded statuses
 
 Then open [semantic/ontology/ta-robot-graph.ttl](semantic/ontology/ta-robot-graph.ttl) (do not modify): results the TA published for the same targets, using a different arm (UR10) and a different IK program.
 
-**Step 4-2. Implement the grounding (2 functions).** Open [semantic/ground_kinematics.py](semantic/ground_kinematics.py):
-- `fk_result_to_triples()` is **already implemented** as a worked example of how to write triples — read it first
-- TODO 1 `robot_spec_to_triples()`: ground the UR5's D-H parameters / joint limits / DoF into triples
-- TODO 2 `ik_result_to_triples()`: ground the IK result for each shared target into triples
-- Notes: float literals must be written as `"..."^^xsd:double`; `solvesForTarget` must point to the shared target URI in the `hw3:` namespace (if you write it in `stu:`, the cross-graph join in Q3 will not find your results)
+**Step 4-2. Implement the grounding (2 functions across 2 files).**
 
-**Step 4-3. Complete the interoperability query.** Open [semantic/queries/q3_interop_compare.rq](semantic/queries/q3_interop_compare.rq) and complete the SPARQL query following the hints: for every shared target, list **each robot's IK status** (3 targets × 2 robots = 6 rows). q1 and q2 are provided — read them before writing q3.
+| File | Grounds | Your work |
+|---|---|---|
+| [semantic/ground_task1_fk.py](semantic/ground_task1_fk.py) | robot spec + FK evaluation vs ground truth (pose/Jacobian errors, PASS/FAIL) | TODO `robot_spec_to_triples()`; `fk_result_to_triples()` is the **worked example** — read it first |
+| [semantic/ground_task2_ik.py](semantic/ground_task2_ik.py) | IK evaluation on the 3 shared targets (status + residual) | TODO `ik_result_to_triples()` |
+| [semantic/ground_task3_insertion.py](semantic/ground_task3_insertion.py) | insertion episodes from the Task 3 results pkl (reward, SUCCESS/FAILURE) | none (TA-provided) — but it needs you to have **run Task 3** so `ravens/test.py` has written `block-insertion-easy-transporter-*.pkl` |
+
+Notes: float literals must be written as `"..."^^xsd:double`; `solvesForTarget` must point to the shared target URI in the `hw3:` namespace (if you write it in `stu:`, the cross-graph join in Q3 will not find your results).
+
+**Step 4-3. Complete the interoperability query.** Open [semantic/queries/q3_interop_compare.rq](semantic/queries/q3_interop_compare.rq) and complete the SPARQL query following the hints: for every shared target, list **each robot's IK status** (3 targets × 2 robots = 6 rows; the same query automatically scales to N robots when more groups' graphs are loaded). q1, q2, and q4 are provided — read them before writing q3.
 
 **Step 4-4. Run and score with one command.**
 
 ```bash
 conda activate taica-hw3
-bash semantic/run_task4.sh                # uses your your_fk / your_ik
+bash semantic/run_task4.sh --group <your-group-id>   # uses your your_fk / your_ik
 # Before finishing Task 1/2 you can preview the pipeline with:
 # bash semantic/run_task4.sh --reference
 ```
 
-The script runs 7 steps: toolchain check → prepare Jena/TDB2 → grounding → OWL reasoning (produces `semantic/output/inferred_graph.ttl`) → load the triple store (`semantic/store/`) → run q1–q3 (results saved to `semantic/output/q*.csv`) → scoring.
+The script runs 7 steps: toolchain check → prepare Jena/TDB2 → the three grounding scripts → OWL reasoning (produces `semantic/output/inferred_graph.ttl`) → load the triple store (`semantic/store/`) → run q1–q4 (results saved to `semantic/output/q*.csv`) → scoring.
 
-Expected output at the end:
+Expected output at the end (q4 is the semantic evaluation report of all three tasks):
 
 ```
-  [S1] q1 robot summary ................ OK  (+4)
-  [S1] DH parameters (6 / 6 joints) ..... OK (+6)
-  [S2] IK status of shared targets (3/3)  OK (+6)
-  [S2] q2 inferred SolvedIKComputation . OK  (+4)
+---- q4_task_evaluation_report ----
+| hw3:PassedFKComputation | 3  |
+| hw3:SolvedIKComputation | 1  |
+| hw3:SuccessfulEpisode   | 10 |
+
+  [S1] q1 robot summary ................ OK  (+2)
+  [S1] DH parameters (6 / 6 joints) .... OK  (+6)
+  [S2] Task 1 FK evaluation (3/3 PASS) . OK  (+4.0)
+  [S2] Task 2 IK statuses (3/3) ........ OK  (+4.0)
+  [S2] q2 inferred SolvedIKComputation . OK  (+2)
+  [S2] Task 3 episodes (10 SUCCESS) .... OK  (+2)
   [S3] q3 interop comparison matrix .... OK  (+10)
   Your Task 4 Score : 30.0 / 30.0
 ```
@@ -170,19 +184,7 @@ The correct Q3 result showcases the point of interoperability: `target_mid` is `
 - `python` is not the taica-hw3 environment → `PYTHON=~/miniconda3/envs/taica-hw3/bin/python bash semantic/run_task4.sh`
 - Jena download fails → manually extract apache-jena-4.10.0 and `export JENA_HOME=<path>` before running
 - q2 is empty → reasoning did not take effect; check that the `hasIKStatus` literal is exactly `"SOLVED"` (case-sensitive, no extra whitespace)
-
----
-
-## Bonus Demo. Semantic Gate (not graded, recommended)
-
-Task 4's reasoning plugged back into Task 3's simulator: with `SEMANTIC_AUDIT=1`, every Ravens pick-and-place action passes a semantic audit before execution — the pick target must be derived by the reasoner as `hw3:ExecutableGraspTarget` (semantically graspable **and** kinematically reachable by IK), otherwise the action is refused with an explanation:
-
-```bash
-conda activate taica-hw3
-python semantic/demo_semantic_gate.py
-```
-
-Three demo cases: pick the block (ALLOW, reward 1.0), pick the fixture (REFUSE: semantic exclusion), pick an empty spot outside the workspace (REFUSE: no known object).
+- Task 3 episodes item FAILs → run Task 3 first; `ground_task3_insertion.py` reads the pkl that `ravens/test.py` writes under `ravens/`
 
 ---
 
@@ -200,9 +202,10 @@ Three demo cases: pick the block (ALLOW, reward 1.0), pick the fixture (REFUSE: 
 
 1. `fk.py` (with `your_fk` completed)
 2. `ik.py` (with `your_ik` completed)
-3. `semantic/ground_kinematics.py` (with the 2 TODO functions completed)
-4. `semantic/queries/q3_interop_compare.rq` (completed)
-5. A short report: screenshots of all four tasks, plus an explanation based on your Task 4 query results of "why `target_mid` is semantically the same target for both arms, yet geometrically reachable by only one of them"
+3. `semantic/ground_task1_fk.py` (with `robot_spec_to_triples()` completed)
+4. `semantic/ground_task2_ik.py` (with `ik_result_to_triples()` completed)
+5. `semantic/queries/q3_interop_compare.rq` (completed)
+6. A short report: screenshots of all four tasks, plus an explanation based on your Task 4 query results of "why `target_mid` is semantically the same target for both arms, yet geometrically reachable by only one of them"
 
 > Note: `semantic/output/`, `semantic/store/`, and `semantic/.cache/` are auto-generated — do not submit them.
 

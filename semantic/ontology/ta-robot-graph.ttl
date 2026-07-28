@@ -1,4 +1,6 @@
-@prefix hw3: <http://taica.course/hw3/ontology#> .
+@prefix hw3:  <http://taica.course/hw3/ontology#> .
+@prefix cora: <http://purl.org/ieee1872-owl/cora-bare#> .
+@prefix soma: <http://www.ease-crc.org/ont/SOMA.owl#> .
 @prefix ta:  <http://taica.course/hw3/data/ta#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
@@ -13,29 +15,29 @@
 # SPARQL can query and compare across the graphs directly.
 # =============================================================================
 
-ta:ta_ur10 a hw3:RobotArm ;
+ta:ta_ur10 a cora:Robot ;
     hw3:producedBy "ta-reference-pipeline" ;
     hw3:hasDoF 6 ;
     hw3:hasJoint ta:ta_ur10_joint1 , ta:ta_ur10_joint2 , ta:ta_ur10_joint3 ,
                  ta:ta_ur10_joint4 , ta:ta_ur10_joint5 , ta:ta_ur10_joint6 .
 
 # UR10 classic DH parameters (meters / radians)
-ta:ta_ur10_joint1 a hw3:RevoluteJoint ;
+ta:ta_ur10_joint1 a soma:RevoluteJoint ;
     hw3:jointIndex 1 ;
     hw3:dh_a "0.0"^^xsd:double ;     hw3:dh_d "0.1273"^^xsd:double ;   hw3:dh_alpha "1.570796"^^xsd:double .
-ta:ta_ur10_joint2 a hw3:RevoluteJoint ;
+ta:ta_ur10_joint2 a soma:RevoluteJoint ;
     hw3:jointIndex 2 ;
     hw3:dh_a "-0.612"^^xsd:double ;  hw3:dh_d "0.0"^^xsd:double ;      hw3:dh_alpha "0.0"^^xsd:double .
-ta:ta_ur10_joint3 a hw3:RevoluteJoint ;
+ta:ta_ur10_joint3 a soma:RevoluteJoint ;
     hw3:jointIndex 3 ;
     hw3:dh_a "-0.5723"^^xsd:double ; hw3:dh_d "0.0"^^xsd:double ;      hw3:dh_alpha "0.0"^^xsd:double .
-ta:ta_ur10_joint4 a hw3:RevoluteJoint ;
+ta:ta_ur10_joint4 a soma:RevoluteJoint ;
     hw3:jointIndex 4 ;
     hw3:dh_a "0.0"^^xsd:double ;     hw3:dh_d "0.163941"^^xsd:double ; hw3:dh_alpha "1.570796"^^xsd:double .
-ta:ta_ur10_joint5 a hw3:RevoluteJoint ;
+ta:ta_ur10_joint5 a soma:RevoluteJoint ;
     hw3:jointIndex 5 ;
     hw3:dh_a "0.0"^^xsd:double ;     hw3:dh_d "0.1157"^^xsd:double ;   hw3:dh_alpha "-1.570796"^^xsd:double .
-ta:ta_ur10_joint6 a hw3:RevoluteJoint ;
+ta:ta_ur10_joint6 a soma:RevoluteJoint ;
     hw3:jointIndex 6 ;
     hw3:dh_a "0.0"^^xsd:double ;     hw3:dh_d "0.0922"^^xsd:double ;   hw3:dh_alpha "0.0"^^xsd:double .
 

@@ -2,15 +2,17 @@
 """Task 4 scoring script (TA-provided; grading uses the same code).
 
 Total 30 points:
-    S1 Robot specification grounding ... 10 pts
-       - q1 finds your robot (hw3:hasDoF 6, 6 joints)          4 pts
+    S1 Robot specification grounding ............. 8 pts
+       - q1 finds your robot (hw3:hasDoF 6, 6 joints)          2 pts
        - all 6 joints' D-H parameters match the course table
          (tolerance 1e-3)                                      6 pts
-    S2 Kinematic result grounding ...... 10 pts
-       - IK statuses of the 3 shared targets are all correct   6 pts
-       - q2 (inferred SolvedIKComputation) contains your
-         target_near row                                       4 pts
-    S3 SPARQL interoperability (Q3) .... 10 pts
+    S2 Per-task evaluation grounding ............. 12 pts
+       - Task 1: 3 FK cases grounded, all PASS                 4 pts
+       - Task 2: IK statuses of the 3 shared targets correct   4 pts
+       - Task 2: q2 (inferred SolvedIKComputation) contains
+         your target_near row                                  2 pts
+       - Task 3: at least one hw3:SuccessfulEpisode grounded   2 pts
+    S3 SPARQL interoperability (Q3) .............. 10 pts
        - 6 rows (3 targets x 2 robots) with the correct status matrix
 
 Invoked automatically by STEP 7 of run_task4.sh (requires JENA_HOME).
@@ -50,6 +52,8 @@ EXPECTED_TA_STATUS = {  # statuses in the TA's UR10 graph (fixed values)
     HW3 + 'target_far': 'OUT_OF_REACH',
 }
 
+EXPECTED_FK_CASES = 3
+
 
 def read_csv(name):
     path = os.path.join(OUTPUT, name)
@@ -83,15 +87,15 @@ def main():
     total = 0.0
     report = []
 
-    # ---------------- S1: robot spec grounding (10) ----------------
+    # ---------------- S1: robot spec grounding (8) ----------------
     s1 = 0.0
     q1 = read_csv('q1_robot_specs.csv')
     stu_rows = [r for r in q1 if r.get('producedBy') != TA_PROV]
     ta_rows = [r for r in q1 if r.get('producedBy') == TA_PROV]
     if (len(stu_rows) == 1 and stu_rows[0].get('dof') == '6'
             and stu_rows[0].get('jointCount') == '6' and len(ta_rows) == 1):
-        s1 += 4.0
-        report.append('[S1] q1 robot summary ................ OK  (+4)')
+        s1 += 2.0
+        report.append('[S1] q1 robot summary ................ OK  (+2)')
     else:
         report.append('[S1] q1 robot summary ................ FAIL (+0) '
                       '(expect exactly 1 student robot with dof=6, 6 joints, '
@@ -99,8 +103,9 @@ def main():
 
     dh_rows = tdbquery(
         'PREFIX hw3: <{ns}>\n'
+        'PREFIX cora: <http://purl.org/ieee1872-owl/cora-bare#>\n'
         'SELECT ?idx ?a ?d ?alpha WHERE {{\n'
-        '  ?r a hw3:RobotArm ; hw3:producedBy ?pb ; hw3:hasJoint ?j .\n'
+        '  ?r a cora:Robot ; hw3:producedBy ?pb ; hw3:hasJoint ?j .\n'
         '  ?j hw3:jointIndex ?idx ; hw3:dh_a ?a ; hw3:dh_d ?d ;\n'
         '     hw3:dh_alpha ?alpha .\n'
         '  FILTER(?pb != "{ta}")\n'
@@ -120,8 +125,25 @@ def main():
         dh_ok, 'OK' if dh_ok == 6 else 'PARTIAL', min(6, dh_ok)))
     total += s1
 
-    # ---------------- S2: IK result grounding (10) ----------------
+    # ---------------- S2: per-task evaluation grounding (12) ----------------
     s2 = 0.0
+
+    # Task 1: FK evaluation cases (expect 3, all PASS)
+    fk_rows = tdbquery(
+        'PREFIX hw3: <{ns}>\n'
+        'SELECT ?c ?status WHERE {{\n'
+        '  ?c a hw3:FKComputation ; hw3:producedBy ?pb ;\n'
+        '     hw3:hasEvaluationStatus ?status .\n'
+        '  FILTER(?pb != "{ta}")\n'
+        '}}\n'.format(ns=HW3, ta=TA_PROV))
+    fk_pass = sum(1 for r in fk_rows if r.get('status') == 'PASS')
+    fk_pts = round(4.0 * min(fk_pass, EXPECTED_FK_CASES) / EXPECTED_FK_CASES, 1)
+    s2 += fk_pts
+    report.append('[S2] Task 1 FK evaluation ({}/{} PASS) . {} (+{})'.format(
+        fk_pass, EXPECTED_FK_CASES,
+        'OK ' if fk_pass >= EXPECTED_FK_CASES else 'PARTIAL', fk_pts))
+
+    # Task 2: IK statuses on the shared targets
     ik_rows = tdbquery(
         'PREFIX hw3: <{ns}>\n'
         'SELECT ?target ?status WHERE {{\n'
@@ -132,21 +154,39 @@ def main():
     got_status = {r['target']: r['status'] for r in ik_rows}
     ik_ok = sum(1 for t, s in EXPECTED_STATUS.items()
                 if got_status.get(t) == s)
-    s2 += ik_ok * 2.0
-    report.append('[S2] IK status of shared targets ({}/3)  {} (+{})'.format(
-        ik_ok, 'OK' if ik_ok == 3 else 'PARTIAL', ik_ok * 2))
+    ik_pts = round(4.0 * ik_ok / 3.0, 1)
+    s2 += ik_pts
+    report.append('[S2] Task 2 IK statuses ({}/3) ......... {} (+{})'.format(
+        ik_ok, 'OK ' if ik_ok == 3 else 'PARTIAL', ik_pts))
 
+    # Task 2: inference check via q2
     q2 = read_csv('q2_reachable_targets.csv')
     stu_solved = [r for r in q2
                   if r.get('target') == HW3 + 'target_near'
                   and TA_ROBOT not in r.get('robot', '')]
     if stu_solved:
-        s2 += 4.0
-        report.append('[S2] q2 inferred SolvedIKComputation . OK  (+4)')
+        s2 += 2.0
+        report.append('[S2] q2 inferred SolvedIKComputation . OK  (+2)')
     else:
         report.append('[S2] q2 inferred SolvedIKComputation . FAIL (+0) '
                       '(your target_near row is missing — check hasIKStatus '
                       'literal and that reasoning ran)')
+
+    # Task 3: successful insertion episodes grounded
+    ep_rows = tdbquery(
+        'PREFIX hw3: <{ns}>\n'
+        'SELECT ?e WHERE {{\n'
+        '  ?e a hw3:SuccessfulEpisode ; hw3:producedBy ?pb .\n'
+        '  FILTER(?pb != "{ta}")\n'
+        '}}\n'.format(ns=HW3, ta=TA_PROV))
+    if ep_rows:
+        s2 += 2.0
+        report.append('[S2] Task 3 episodes ({} SUCCESS) ..... OK  (+2)'.format(
+            len(ep_rows)))
+    else:
+        report.append('[S2] Task 3 episodes ................. FAIL (+0) '
+                      '(run Task 3 first so ravens/test.py writes the '
+                      'results pkl, then re-run this pipeline)')
     total += s2
 
     # ---------------- S3: interoperability query (10) ----------------

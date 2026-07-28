@@ -43,18 +43,6 @@ print(sys.path)
 from ik import your_ik,pybullet_ik
 from hw3_utils.bullet_utils import pose_7d_to_6d, get_pose_from_matrix, get_matrix_from_pose,draw_coordinate,get_dense_waypoints
 
-# ---- Semantic audit hook (Semantic-Enhanced Robotics HW3) -------------------
-# Set SEMANTIC_AUDIT=1 to gate every pick-and-place action through the
-# Jena OWL reasoner (ur5:ExecutableGraspTarget check) before execution.
-# Default off: original Task 3 behavior is completely unchanged.
-SEMANTIC_AUDIT = os.environ.get('SEMANTIC_AUDIT', '0') == '1'
-if SEMANTIC_AUDIT:
-  _semantic_root = os.path.abspath(
-      os.path.join(this_dir, '..', '..', '..', 'semantic'))
-  if _semantic_root not in sys.path:
-    sys.path.append(_semantic_root)
-  from semantic_bridge import SemanticTaskAuditor
-
 PLACE_STEP = 0.0003
 PLACE_DELTA_THRESHOLD = 0.005
 
@@ -97,9 +85,6 @@ class Environment(gym.Env):
     self.agent_cams = cameras.RealSenseD415.CONFIG
 
     self.assets_root = assets_root
-
-    # Semantic gate (None unless SEMANTIC_AUDIT=1)
-    self.semantic_auditor = SemanticTaskAuditor() if SEMANTIC_AUDIT else None
 
     color_tuple = [
         gym.spaces.Box(0, 255, config['image_size'] + (3,), dtype=np.uint8)
@@ -258,15 +243,6 @@ class Environment(gym.Env):
       (obs, reward, done, info) tuple containing MDP step data.
     """
     if action is not None:
-      # Semantic gate: refuse actions whose pick target is not an inferred
-      # ur5:ExecutableGraspTarget (graspable AND kinematically reachable).
-      if self.semantic_auditor is not None:
-        verdict = self.semantic_auditor.audit_action(self, action, self.solve_ik)
-        if not verdict['allowed']:
-          print('[SEMANTIC-GATE] action REFUSED: ' + verdict['reason'])
-          obs = self._get_obs()
-          return obs, 0.0, True, self.info
-
       timeout = self.task.primitive(self.movej, self.movep, self.ee, **action)
 
       # Exit early if action times out. We still return an observation

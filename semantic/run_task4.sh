@@ -4,7 +4,9 @@
 #
 #   STEP 1  Check the toolchain (java / javac / python)
 #   STEP 2  Prepare Apache Jena 4.10.0 (incl. TDB2 triple store CLI tools)
-#   STEP 3  Grounding: run ground_kinematics.py -> output/robot_graph.ttl
+#   STEP 3  Grounding: run the three per-task evaluation scripts
+#           (ground_task1_fk.py / ground_task2_ik.py / ground_task3_insertion.py)
+#           -> output/task{1,2,3}_*.ttl
 #   STEP 4  OWL reasoning: Java Jena loads ontology + your graph + TA's graph,
 #           materializes deductions -> output/inferred_graph.ttl
 #   STEP 5  Load the TDB2 triple store (semantic/store/)
@@ -62,9 +64,15 @@ export JENA_HOME
 echo "JENA_HOME = $JENA_HOME ($(ls "$JENA_HOME/lib"/*.jar | wc -l) jars)"
 
 echo
-echo "== STEP 3/7 | Grounding: numeric kinematics -> RDF (robot_graph.ttl) =="
-GROUND_SCRIPT="${GROUND_SCRIPT:-ground_kinematics.py}"   # overridable for TA testing
-"$PYTHON" "$GROUND_SCRIPT" ${GROUND_ARGS[@]+"${GROUND_ARGS[@]}"}
+echo "== STEP 3/7 | Grounding: per-task evaluation -> RDF graphs =="
+if [ -n "${GROUND_SCRIPT:-}" ]; then          # overridable for TA testing
+    "$PYTHON" "$GROUND_SCRIPT" ${GROUND_ARGS[@]+"${GROUND_ARGS[@]}"}
+else
+    for s in ground_task1_fk.py ground_task2_ik.py ground_task3_insertion.py; do
+        echo "---- $s ----"
+        "$PYTHON" "$s" ${GROUND_ARGS[@]+"${GROUND_ARGS[@]}"}
+    done
+fi
 
 echo
 echo "== STEP 4/7 | OWL reasoning (Java Jena) -> inferred_graph.ttl =="
@@ -77,7 +85,9 @@ if [ ! -f "$CLASSES/course/taica/hw3/SemanticReasoner.class" ] || [ "$SRC" -nt "
 fi
 java -cp "$CLASSES:$JENA_HOME/lib/*" course.taica.hw3.SemanticReasoner \
     output/inferred_graph.ttl - \
-    ontology/hw3-ontology.ttl output/robot_graph.ttl ontology/ta-robot-graph.ttl
+    ontology/hw3-ontology.ttl \
+    output/task1_fk_graph.ttl output/task2_ik_graph.ttl output/task3_insertion_graph.ttl \
+    ontology/ta-robot-graph.ttl
 
 echo
 echo "== STEP 5/7 | Loading the TDB2 triple store (semantic/store/) =="
@@ -86,7 +96,7 @@ rm -rf store
 
 echo
 echo "== STEP 6/7 | SPARQL queries against the triple store =="
-for q in queries/q1_robot_specs.rq queries/q2_reachable_targets.rq queries/q3_interop_compare.rq; do
+for q in queries/q1_robot_specs.rq queries/q2_reachable_targets.rq queries/q3_interop_compare.rq queries/q4_task_evaluation_report.rq; do
     name="$(basename "$q" .rq)"
     echo
     echo "---- $name ----"

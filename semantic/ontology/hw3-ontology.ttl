@@ -1,38 +1,81 @@
-@prefix hw3:  <http://taica.course/hw3/ontology#> .
-@prefix owl:  <http://www.w3.org/2002/07/owl#> .
-@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix hw3:      <http://taica.course/hw3/ontology#> .
+@prefix skos:     <http://www.w3.org/2004/02/skos/core#> .
+@prefix cora:     <http://purl.org/ieee1872-owl/cora-bare#> .
+@prefix sumocora: <http://purl.org/ieee1872-owl/sumo-cora#> .
+@prefix soma:     <http://www.ease-crc.org/ont/SOMA.owl#> .
+@prefix dul:      <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#> .
+@prefix corax:    <http://purl.org/ieee1872-owl/corax#> .
+@prefix knowrob:  <http://knowrob.org/kb/knowrob.owl#> .
+@prefix owl:      <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:      <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:     <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:      <http://www.w3.org/2001/XMLSchema#> .
 
 <http://taica.course/hw3/ontology> a owl:Ontology ;
-    rdfs:label "TAICA HW3 Robot Kinematics Ontology"@en ;
-    rdfs:comment "Shared robotics vocabulary for HW3: robot specifications (DH parameters), kinematic computation results (FK / IK), and semantic task-level concepts. Independently developed robotics programs that publish RDF with this vocabulary can share, query, compare, and reuse each other's robot knowledge."@en ;
-    owl:versionInfo "2026-fall-1.0" .
+    rdfs:label "TAICA HW3 Robot Kinematics Evaluation Ontology"@en ;
+    rdfs:comment "Vocabulary for evaluating HW3 Task 1 (FK), Task 2 (IK), and Task 3 (Transporter block insertion) as machine-readable knowledge. Design rule: REUSE existing vocabularies wherever a suitable term exists — IEEE 1872 CORA for robots, SOMA for joints / poses / episodes, DUL for upper-level alignment — and mint hw3: terms only for course-specific concepts (kinematic computations, D-H parameters, evaluation statuses) that no standard vocabulary covers."@en ;
+    owl:versionInfo "2026-fall-2.0" .
+
+# =============================================================================
+# 0. Local stubs for the reused external vocabularies
+#    The official CORA / SOMA / DUL OWL files are not guaranteed to resolve
+#    on grading machines, so the externally-reused terms are minimally
+#    declared here with their ORIGINAL IRIs. Data and queries use these
+#    standard terms directly — hw3: does NOT redefine them.
+# =============================================================================
+
+# --- IEEE 1872 CORA ---
+cora:Robot a owl:Class ;
+    rdfs:label "Robot (IEEE 1872 CORA)"@en .
+
+# --- SOMA (EASE) ---
+soma:Joint a owl:Class ;
+    rdfs:label "Joint (SOMA)"@en .
+
+soma:RevoluteJoint a owl:Class ;
+    rdfs:subClassOf soma:Joint ;
+    rdfs:label "Revolute Joint (SOMA)"@en .
+
+soma:6DPose a owl:Class ;
+    rdfs:label "6D Pose (SOMA)"@en .
+
+soma:Episode a owl:Class ;
+    rdfs:label "Episode (SOMA)"@en ;
+    skos:scopeNote "Used for the Task 3 Transporter test episodes, matching how NEEM episodes are modeled in KnowRob/SOMA."@en .
+
+# --- DUL (DOLCE+DnS Ultralite) — upper-level alignment targets ---
+dul:Event a owl:Class ;
+    rdfs:label "Event (DUL)"@en .
+
+dul:Region a owl:Class ;
+    rdfs:label "Region (DUL)"@en .
+
+dul:hasComponent a owl:ObjectProperty ;
+    rdfs:label "has component (DUL)"@en .
+
+dul:involvesAgent a owl:ObjectProperty ;
+    rdfs:label "involves agent (DUL)"@en .
+
+dul:hasRegion a owl:ObjectProperty ;
+    rdfs:label "has region (DUL)"@en .
+
+# Alignment of the reused classes to DUL upper level
+soma:6DPose rdfs:subClassOf dul:Region .
 
 # =============================================================================
 # 1. Robot hardware & specification
-#    Covers "robot specifications": arm, joints, D-H parameters, DoF
+#    Robots are cora:Robot; joints are soma:RevoluteJoint — both reused
+#    directly. Only the D-H parameterization (course convention) and the
+#    DoF/limit literals are hw3: terms, attached to the standard classes.
 # =============================================================================
-hw3:RobotArm a owl:Class ;
-    rdfs:label "Robot Arm"@en .
-
-hw3:Joint a owl:Class ;
-    rdfs:label "Joint"@en .
-
-hw3:RevoluteJoint a owl:Class ;
-    rdfs:subClassOf hw3:Joint ;
-    rdfs:label "Revolute Joint"@en .
-
-hw3:EndEffector a owl:Class ;
-    rdfs:label "End Effector"@en .
-
 hw3:hasJoint a owl:ObjectProperty ;
-    rdfs:domain hw3:RobotArm ;
-    rdfs:range hw3:Joint ;
+    rdfs:subPropertyOf dul:hasComponent ;
+    rdfs:domain cora:Robot ;
+    rdfs:range soma:Joint ;
     rdfs:label "has joint"@en .
 
 hw3:hasDoF a owl:DatatypeProperty ;
-    rdfs:domain hw3:RobotArm ;
+    rdfs:domain cora:Robot ;
     rdfs:range xsd:integer ;
     rdfs:label "degrees of freedom"@en .
 
@@ -42,41 +85,44 @@ hw3:producedBy a owl:DatatypeProperty ;
     rdfs:label "produced by"@en .
 
 hw3:jointIndex a owl:DatatypeProperty ;
-    rdfs:domain hw3:Joint ;
+    rdfs:domain soma:Joint ;
     rdfs:range xsd:integer ;
     rdfs:label "joint index (1-based)"@en .
 
-# --- classic DH parameters of one joint (following the course convention) ---
+# --- classic D-H parameters of one joint (course convention; no standard
+#     vocabulary models D-H link parameters, hence hw3: terms) ---
 hw3:dh_a a owl:DatatypeProperty ;
-    rdfs:domain hw3:Joint ;
+    rdfs:domain soma:Joint ;
     rdfs:range xsd:double ;
     rdfs:label "DH link length a (meters)"@en .
 
 hw3:dh_d a owl:DatatypeProperty ;
-    rdfs:domain hw3:Joint ;
+    rdfs:domain soma:Joint ;
     rdfs:range xsd:double ;
     rdfs:label "DH link offset d (meters)"@en .
 
 hw3:dh_alpha a owl:DatatypeProperty ;
-    rdfs:domain hw3:Joint ;
+    rdfs:domain soma:Joint ;
     rdfs:range xsd:double ;
     rdfs:label "DH link twist alpha (radians)"@en .
 
 hw3:hasJointLowerLimit a owl:DatatypeProperty ;
-    rdfs:domain hw3:Joint ;
+    rdfs:domain soma:Joint ;
     rdfs:range xsd:double ;
     rdfs:label "joint lower limit (radians)"@en .
 
 hw3:hasJointUpperLimit a owl:DatatypeProperty ;
-    rdfs:domain hw3:Joint ;
+    rdfs:domain soma:Joint ;
     rdfs:range xsd:double ;
     rdfs:label "joint upper limit (radians)"@en .
 
 # =============================================================================
-# 2. Kinematic computations
-#    Covers "kinematic results": FK / IK inputs, outputs, and statuses
+# 2. Kinematic computations (evaluation of Task 1 and Task 2)
+#    "An FK/IK computation" has no counterpart in CORA/SOMA/DUL, so these
+#    are hw3: classes, aligned to dul:Event (a computation is an occurrence).
 # =============================================================================
 hw3:KinematicComputation a owl:Class ;
+    rdfs:subClassOf dul:Event ;
     rdfs:label "Kinematic Computation"@en .
 
 hw3:FKComputation a owl:Class ;
@@ -87,18 +133,16 @@ hw3:IKComputation a owl:Class ;
     rdfs:subClassOf hw3:KinematicComputation ;
     rdfs:label "Inverse Kinematics Computation"@en .
 
-hw3:TargetPose a owl:Class ;
-    rdfs:label "Target Pose"@en ;
-    rdfs:comment "A named Cartesian target. Shared target URIs are the join keys that make results from different robots / programs comparable."@en .
-
 hw3:computedForRobot a owl:ObjectProperty ;
+    rdfs:subPropertyOf dul:involvesAgent ;
     rdfs:domain hw3:KinematicComputation ;
-    rdfs:range hw3:RobotArm ;
+    rdfs:range cora:Robot ;
     rdfs:label "computed for robot"@en .
 
 hw3:solvesForTarget a owl:ObjectProperty ;
+    rdfs:subPropertyOf dul:hasRegion ;
     rdfs:domain hw3:IKComputation ;
-    rdfs:range hw3:TargetPose ;
+    rdfs:range soma:6DPose ;
     rdfs:label "solves for target"@en .
 
 hw3:hasInputJointConfiguration a owl:DatatypeProperty ;
@@ -130,53 +174,77 @@ hw3:hasResidual a owl:DatatypeProperty ;
     rdfs:range xsd:double ;
     rdfs:label "has Cartesian residual error norm (meters)"@en .
 
-# --- target pose geometry (world frame) ---
-hw3:hasPositionX a owl:DatatypeProperty ;
-    rdfs:domain hw3:TargetPose ; rdfs:range xsd:double ;
-    rdfs:label "target x (meters)"@en .
-hw3:hasPositionY a owl:DatatypeProperty ;
-    rdfs:domain hw3:TargetPose ; rdfs:range xsd:double ;
-    rdfs:label "target y (meters)"@en .
-hw3:hasPositionZ a owl:DatatypeProperty ;
-    rdfs:domain hw3:TargetPose ; rdfs:range xsd:double ;
-    rdfs:label "target z (meters)"@en .
+# --- evaluation of Task 1 (FK correctness against ground truth) ---
+hw3:hasPoseError a owl:DatatypeProperty ;
+    rdfs:domain hw3:FKComputation ;
+    rdfs:range xsd:double ;
+    rdfs:comment "L2 norm between the computed 7d end-effector pose and the ground-truth pose (course threshold: 0.005)."@en ;
+    rdfs:label "has FK pose error"@en .
 
-# =============================================================================
-# 3. Semantic task-level concepts (used by the Ravens semantic-gate bonus)
-# =============================================================================
-hw3:PhysicalObject a owl:Class ;
-    rdfs:label "Physical Object"@en .
+hw3:hasJacobianError a owl:DatatypeProperty ;
+    rdfs:domain hw3:FKComputation ;
+    rdfs:range xsd:double ;
+    rdfs:comment "L2 norm between the computed 6x6 Jacobian and the ground-truth Jacobian (course threshold: 0.05). -1.0 when not computed (reference preview mode)."@en ;
+    rdfs:label "has Jacobian error"@en .
 
-hw3:GraspableObject a owl:Class ;
-    rdfs:subClassOf hw3:PhysicalObject ;
-    rdfs:label "Graspable Object"@en ;
-    rdfs:comment "Semantically graspable (size / weight / material). Asserted by perception or scene annotation, NOT derived from kinematics."@en .
-
-hw3:hasObjectLabel a owl:DatatypeProperty ;
-    rdfs:domain hw3:PhysicalObject ;
+hw3:hasEvaluationStatus a owl:DatatypeProperty ;
+    rdfs:domain hw3:KinematicComputation ;
     rdfs:range xsd:string ;
-    rdfs:label "has object label"@en .
-
-hw3:isKinematicallyReachable a owl:DatatypeProperty ;
-    rdfs:domain hw3:PhysicalObject ;
-    rdfs:range xsd:boolean ;
-    rdfs:comment "Grounded from the numeric IK layer: true iff the IK solver reports SOLVED for this object's grasp pose."@en ;
-    rdfs:label "is kinematically reachable"@en .
-
-hw3:solvesForObject a owl:ObjectProperty ;
-    rdfs:domain hw3:IKComputation ;
-    rdfs:range hw3:PhysicalObject ;
-    rdfs:label "solves for object"@en .
+    rdfs:comment "PASS iff all errors of this computation are within the course thresholds; FAIL otherwise. Asserted by the numeric layer."@en ;
+    rdfs:label "has evaluation status"@en .
 
 # =============================================================================
-# 4. Inference-defined classes (materialized by the OWL reasoner —
+# 3. Task-execution concepts (evaluation of Task 3)
+#    Episodes are soma:Episode — reused directly. Only the course-specific
+#    reward / outcome literals are hw3: terms.
+# =============================================================================
+hw3:performsTask a owl:DatatypeProperty ;
+    rdfs:domain soma:Episode ;
+    rdfs:range xsd:string ;
+    rdfs:label "performs task (e.g. block-insertion-easy)"@en .
+
+hw3:episodeIndex a owl:DatatypeProperty ;
+    rdfs:domain soma:Episode ;
+    rdfs:range xsd:integer ;
+    rdfs:label "episode index"@en .
+
+hw3:hasReward a owl:DatatypeProperty ;
+    rdfs:domain soma:Episode ;
+    rdfs:range xsd:double ;
+    rdfs:label "has total reward"@en .
+
+hw3:hasOutcome a owl:DatatypeProperty ;
+    rdfs:domain soma:Episode ;
+    rdfs:range xsd:string ;
+    rdfs:comment "SUCCESS iff the episode's total reward reaches 1.0; FAILURE otherwise. Asserted by the numeric layer."@en ;
+    rdfs:label "has outcome"@en .
+
+# =============================================================================
+# 4. Inference-defined evaluation classes (materialized by the OWL reasoner —
 #    never asserted directly; this is why Step 4-4 runs the reasoner
-#    BEFORE loading the triple store)
+#    BEFORE loading the triple store).
+#    One evaluation class per task:
+#      Task 1 -> PassedFKComputation
+#      Task 2 -> SolvedIKComputation
+#      Task 3 -> SuccessfulEpisode   (defined over the reused soma:Episode)
 # =============================================================================
+
+# PassedFKComputation ≡ FKComputation ⊓ (hasEvaluationStatus value "PASS")
+hw3:PassedFKComputation a owl:Class ;
+    rdfs:label "Passed FK Computation (Task 1 evaluation)"@en ;
+    owl:equivalentClass [
+        a owl:Class ;
+        owl:intersectionOf (
+            hw3:FKComputation
+            [ a owl:Restriction ;
+              owl:onProperty hw3:hasEvaluationStatus ;
+              owl:hasValue "PASS" ]
+        )
+    ] .
 
 # SolvedIKComputation ≡ IKComputation ⊓ (hasIKStatus value "SOLVED")
 hw3:SolvedIKComputation a owl:Class ;
-    rdfs:label "Solved IK Computation"@en ;
+    rdfs:label "Solved IK Computation (Task 2 evaluation)"@en ;
     owl:equivalentClass [
         a owl:Class ;
         owl:intersectionOf (
@@ -187,42 +255,52 @@ hw3:SolvedIKComputation a owl:Class ;
         )
     ] .
 
-# ExecutableGraspTarget ≡ GraspableObject ⊓ (isKinematicallyReachable value true)
-hw3:ExecutableGraspTarget a owl:Class ;
-    rdfs:label "Executable Grasp Target"@en ;
-    rdfs:comment "An object that is semantically graspable AND kinematically reachable. Membership is derived by the OWL reasoner."@en ;
+# SuccessfulEpisode ≡ soma:Episode ⊓ (hasOutcome value "SUCCESS")
+hw3:SuccessfulEpisode a owl:Class ;
+    rdfs:label "Successful Episode (Task 3 evaluation)"@en ;
     owl:equivalentClass [
         a owl:Class ;
         owl:intersectionOf (
-            hw3:GraspableObject
+            soma:Episode
             [ a owl:Restriction ;
-              owl:onProperty hw3:isKinematicallyReachable ;
-              owl:hasValue true ]
+              owl:onProperty hw3:hasOutcome ;
+              owl:hasValue "SUCCESS" ]
         )
     ] .
 
 # =============================================================================
 # 5. Shared target poses (TA-provided, world frame)
+#    Typed with the reused soma:6DPose — no hw3:TargetPose class is minted.
 #    These three URIs are SHARED IDENTIFIERS: your UR5 graph and the TA's
 #    UR10 graph both publish IK results against the same target URIs,
 #    which is what makes cross-graph SPARQL comparison possible.
 # =============================================================================
+hw3:hasPositionX a owl:DatatypeProperty ;
+    rdfs:domain soma:6DPose ; rdfs:range xsd:double ;
+    rdfs:label "target x (meters)"@en .
+hw3:hasPositionY a owl:DatatypeProperty ;
+    rdfs:domain soma:6DPose ; rdfs:range xsd:double ;
+    rdfs:label "target y (meters)"@en .
+hw3:hasPositionZ a owl:DatatypeProperty ;
+    rdfs:domain soma:6DPose ; rdfs:range xsd:double ;
+    rdfs:label "target z (meters)"@en .
+
 # (Float literals are always written as "..."^^xsd:double — a bare 0.35 in
 #  Turtle is xsd:decimal, which conflicts with the xsd:double property range
 #  and makes the reasoner report dtRange violations.)
-hw3:target_near a hw3:TargetPose ;
+hw3:target_near a soma:6DPose ;
     rdfs:label "target_near (inside UR5 workspace)"@en ;
     hw3:hasPositionX "0.35"^^xsd:double ;
     hw3:hasPositionY "0.28"^^xsd:double ;
     hw3:hasPositionZ "0.95"^^xsd:double .
 
-hw3:target_mid a hw3:TargetPose ;
+hw3:target_mid a soma:6DPose ;
     rdfs:label "target_mid (outside UR5 reach, inside UR10 reach)"@en ;
     hw3:hasPositionX "0.90"^^xsd:double ;
     hw3:hasPositionY "0.13"^^xsd:double ;
     hw3:hasPositionZ "0.80"^^xsd:double .
 
-hw3:target_far a hw3:TargetPose ;
+hw3:target_far a soma:6DPose ;
     rdfs:label "target_far (outside both workspaces)"@en ;
     hw3:hasPositionX "1.80"^^xsd:double ;
     hw3:hasPositionY "0.50"^^xsd:double ;
