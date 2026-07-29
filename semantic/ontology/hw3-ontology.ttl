@@ -4,6 +4,9 @@
 @prefix sumocora: <http://purl.org/ieee1872-owl/sumo-cora#> .
 @prefix soma:     <http://www.ease-crc.org/ont/SOMA.owl#> .
 @prefix dul:      <http://www.ontologydesignpatterns.org/ont/dul/DUL.owl#> .
+@prefix pos:      <http://purl.org/ieee1872-owl/pos#> .
+@prefix qudt:     <http://qudt.org/schema/qudt/> .
+@prefix unit:     <http://qudt.org/vocab/unit/> .
 @prefix corax:    <http://purl.org/ieee1872-owl/corax#> .
 @prefix knowrob:  <http://knowrob.org/kb/knowrob.owl#> .
 @prefix owl:      <http://www.w3.org/2002/07/owl#> .
@@ -43,6 +46,43 @@ soma:Episode a owl:Class ;
     rdfs:label "Episode (SOMA)"@en ;
     skos:scopeNote "Used for the Task 3 Transporter test episodes, matching how NEEM episodes are modeled in KnowRob/SOMA."@en .
 
+soma:JointState a owl:Class ;
+    rdfs:label "Joint State (SOMA)"@en ;
+    skos:scopeNote "The state of one joint at one instant (mirrors ROS sensor_msgs/JointState; adopted from SOMA's URDF/kinematics vocabulary). Replaces the legacy JSON-string joint vectors."@en .
+
+soma:hasJointPosition a owl:DatatypeProperty ;
+    rdfs:domain soma:JointState ;
+    rdfs:range xsd:double ;
+    rdfs:label "has joint position (SOMA; radians for revolute joints)"@en .
+
+soma:Trajectory a owl:Class ;
+    rdfs:label "Trajectory (SOMA)"@en ;
+    skos:scopeNote "A path of motion sampled over time or solver iterations."@en .
+
+# --- IEEE 1872 POS sub-ontology (position / orientation / pose) ---
+pos:Pose a owl:Class ;
+    rdfs:label "Pose (IEEE 1872 POS)"@en .
+
+pos:Position a owl:Class ;
+    rdfs:label "Position (IEEE 1872 POS)"@en .
+
+pos:Orientation a owl:Class ;
+    rdfs:label "Orientation (IEEE 1872 POS)"@en .
+
+# --- QUDT units (numeric values carry a unit IRI, never a unit-in-string) ---
+qudt:Unit a owl:Class ;
+    rdfs:label "Unit (QUDT)"@en .
+
+qudt:hasUnit a owl:ObjectProperty ;
+    rdfs:range qudt:Unit ;
+    rdfs:label "has unit (QUDT)"@en .
+
+unit:M a qudt:Unit ;
+    rdfs:label "metre (QUDT unit:M)"@en .
+
+unit:RAD a qudt:Unit ;
+    rdfs:label "radian (QUDT unit:RAD)"@en .
+
 # --- DUL (DOLCE+DnS Ultralite) — upper-level alignment targets ---
 dul:Event a owl:Class ;
     rdfs:label "Event (DUL)"@en .
@@ -59,8 +99,13 @@ dul:involvesAgent a owl:ObjectProperty ;
 dul:hasRegion a owl:ObjectProperty ;
     rdfs:label "has region (DUL)"@en .
 
+dul:directlyPrecedes a owl:ObjectProperty ;
+    rdfs:label "directly precedes (DUL)"@en ;
+    rdfs:comment "Immediate successor ordering; used to chain trajectory samples."@en .
+
 # Alignment of the reused classes to DUL upper level
 soma:6DPose rdfs:subClassOf dul:Region .
+soma:6DPose rdfs:subClassOf pos:Pose .
 
 # =============================================================================
 # 1. Robot hardware & specification
@@ -78,6 +123,7 @@ hw3:hasDoF a owl:DatatypeProperty ;
     rdfs:domain cora:Robot ;
     rdfs:range xsd:integer ;
     rdfs:label "degrees of freedom"@en .
+
 
 hw3:producedBy a owl:DatatypeProperty ;
     rdfs:range xsd:string ;
@@ -145,23 +191,116 @@ hw3:solvesForTarget a owl:ObjectProperty ;
     rdfs:range soma:6DPose ;
     rdfs:label "solves for target"@en .
 
-hw3:hasInputJointConfiguration a owl:DatatypeProperty ;
+# --- structured joint configurations (REUSE soma:JointState; the legacy
+#     JSON-string encoding is retired — numbers live on typed literals) ---
+hw3:JointConfiguration a owl:Class ;
+    rdfs:label "Joint Configuration"@en ;
+    rdfs:comment "A full arm configuration: the aggregation of exactly one soma:JointState per kinematic joint. Each state points back at the joint individual it describes."@en .
+
+hw3:hasJointState a owl:ObjectProperty ;
+    rdfs:subPropertyOf dul:hasComponent ;
+    rdfs:domain hw3:JointConfiguration ;
+    rdfs:range soma:JointState ;
+    rdfs:label "has joint state"@en .
+
+hw3:isStateOfJoint a owl:ObjectProperty ;
+    rdfs:domain soma:JointState ;
+    rdfs:range soma:Joint ;
+    rdfs:label "is state of joint"@en ;
+    rdfs:comment "Links a JointState back to the soma:Joint individual (with its D-H parameters) it describes."@en .
+
+hw3:hasInputJointConfiguration a owl:ObjectProperty ;
     rdfs:domain hw3:FKComputation ;
-    rdfs:range xsd:string ;
-    rdfs:comment "JSON-encoded list of 6 joint angles (radians) given to FK."@en ;
+    rdfs:range hw3:JointConfiguration ;
+    rdfs:comment "The 6 joint angles given to FK, as a structured JointConfiguration node."@en ;
     rdfs:label "has input joint configuration"@en .
 
-hw3:hasEndEffectorPose a owl:DatatypeProperty ;
+hw3:hasEndEffectorPose a owl:ObjectProperty ;
     rdfs:domain hw3:KinematicComputation ;
-    rdfs:range xsd:string ;
-    rdfs:comment "JSON-encoded 7d pose [x, y, z, qx, qy, qz, qw] in world frame."@en ;
+    rdfs:range soma:6DPose ;
+    rdfs:comment "The FK-computed end-effector pose in the world frame, as a structured soma:6DPose node (position component + quaternion orientation component)."@en ;
     rdfs:label "has end effector pose"@en .
 
-hw3:hasJointConfiguration a owl:DatatypeProperty ;
+hw3:hasJointConfiguration a owl:ObjectProperty ;
     rdfs:domain hw3:IKComputation ;
-    rdfs:range xsd:string ;
-    rdfs:comment "JSON-encoded list of 6 joint angles (radians) returned by IK."@en ;
+    rdfs:range hw3:JointConfiguration ;
+    rdfs:comment "The 6 joint angles returned by IK, as a structured JointConfiguration node."@en ;
     rdfs:label "has (output) joint configuration"@en .
+
+# --- structured pose components (soma:6DPose = pos:Position + orientation) ---
+hw3:QuaternionOrientation a owl:Class ;
+    rdfs:subClassOf pos:Orientation ;
+    rdfs:label "Quaternion Orientation (x, y, z, w)"@en .
+
+hw3:hasPositionComponent a owl:ObjectProperty ;
+    rdfs:domain pos:Pose ;
+    rdfs:range pos:Position ;
+    rdfs:label "has position component"@en .
+
+hw3:hasOrientationComponent a owl:ObjectProperty ;
+    rdfs:domain pos:Pose ;
+    rdfs:range pos:Orientation ;
+    rdfs:label "has orientation component"@en .
+
+hw3:hasReferenceFrame a owl:DatatypeProperty ;
+    rdfs:domain pos:Pose ;
+    rdfs:range xsd:string ;
+    rdfs:label "has reference frame"@en .
+
+hw3:hasQuatX a owl:DatatypeProperty ;
+    rdfs:domain hw3:QuaternionOrientation ; rdfs:range xsd:double ;
+    rdfs:label "quaternion x"@en .
+hw3:hasQuatY a owl:DatatypeProperty ;
+    rdfs:domain hw3:QuaternionOrientation ; rdfs:range xsd:double ;
+    rdfs:label "quaternion y"@en .
+hw3:hasQuatZ a owl:DatatypeProperty ;
+    rdfs:domain hw3:QuaternionOrientation ; rdfs:range xsd:double ;
+    rdfs:label "quaternion z"@en .
+hw3:hasQuatW a owl:DatatypeProperty ;
+    rdfs:domain hw3:QuaternionOrientation ; rdfs:range xsd:double ;
+    rdfs:label "quaternion w"@en .
+
+# --- IK solver trajectories (REUSE soma:Trajectory + dul:directlyPrecedes):
+#     the joint-space convergence path of the iterative solver, one sample
+#     per recorded iteration, each carrying a JointConfiguration and the
+#     FK end-effector pose ---
+hw3:SolverTrajectory a owl:Class ;
+    rdfs:subClassOf soma:Trajectory ;
+    rdfs:label "IK Solver Trajectory"@en .
+
+hw3:TrajectorySample a owl:Class ;
+    rdfs:label "Trajectory Sample"@en .
+
+hw3:hasSolutionTrajectory a owl:ObjectProperty ;
+    rdfs:domain hw3:IKComputation ;
+    rdfs:range soma:Trajectory ;
+    rdfs:label "has solution trajectory"@en .
+
+hw3:hasTrajectorySample a owl:ObjectProperty ;
+    rdfs:subPropertyOf dul:hasComponent ;
+    rdfs:domain soma:Trajectory ;
+    rdfs:range hw3:TrajectorySample ;
+    rdfs:label "has trajectory sample"@en .
+
+hw3:hasSampleIndex a owl:DatatypeProperty ;
+    rdfs:domain hw3:TrajectorySample ; rdfs:range xsd:integer ;
+    rdfs:label "has sample index (0-based, after downsampling)"@en .
+
+hw3:atSolverIteration a owl:DatatypeProperty ;
+    rdfs:domain hw3:TrajectorySample ; rdfs:range xsd:integer ;
+    rdfs:label "at solver iteration (original iteration number)"@en .
+
+hw3:hasSampleResidual a owl:DatatypeProperty ;
+    rdfs:domain hw3:TrajectorySample ; rdfs:range xsd:double ;
+    rdfs:label "Cartesian residual to target at this sample (metres)"@en .
+
+hw3:hasSampleCount a owl:DatatypeProperty ;
+    rdfs:domain soma:Trajectory ; rdfs:range xsd:integer ;
+    rdfs:label "number of grounded samples"@en .
+
+hw3:hasTotalIterationCount a owl:DatatypeProperty ;
+    rdfs:domain soma:Trajectory ; rdfs:range xsd:integer ;
+    rdfs:label "total solver iterations executed"@en .
 
 hw3:hasIKStatus a owl:DatatypeProperty ;
     rdfs:domain hw3:IKComputation ;
@@ -220,6 +359,34 @@ hw3:hasOutcome a owl:DatatypeProperty ;
     rdfs:label "has outcome"@en .
 
 # =============================================================================
+# 3b. Semantic-gate vocabulary (Task 4 decision reasoning)
+#     Object-level semantics that turn reasoning into robot DECISIONS:
+#     graspability (perception layer) and reachability (IK / execution
+#     layer). Task 3's grounding asserts these facts for the insertion
+#     scene; Exercise 4 (bonus) has you define the gate's reasoning rule.
+# =============================================================================
+hw3:GraspableObject a owl:Class ;
+    rdfs:label "Graspable Object"@en ;
+    rdfs:comment "Semantically graspable (perception-layer knowledge), independent of kinematics."@en .
+
+hw3:isKinematicallyReachable a owl:DatatypeProperty ;
+    rdfs:range xsd:boolean ;
+    rdfs:label "is kinematically reachable"@en ;
+    rdfs:comment "Grounded from the numeric layer: IK SOLVED, or proven by successful execution."@en .
+
+hw3:manipulatesObject a owl:ObjectProperty ;
+    rdfs:domain soma:Episode ;
+    rdfs:label "manipulates object"@en .
+
+# The gate's reasoning rule is STUDENT WORK (Exercise 4, bonus):
+#   ExecutableGraspTarget ≡ GraspableObject ⊓ (isKinematicallyReachable value true)
+# Only the class is declared here; the owl:equivalentClass axiom lives in
+# semantic/exercises/ex4-semantic-gate.ttl.
+hw3:ExecutableGraspTarget a owl:Class ;
+    rdfs:label "Executable Grasp Target"@en ;
+    rdfs:comment "Membership derived by the OWL reasoner from the equivalence rule YOU define in Exercise 4 — never asserted directly."@en .
+
+# =============================================================================
 # 4. Inference-defined evaluation classes (materialized by the OWL reasoner —
 #    never asserted directly; this is why Step 4-4 runs the reasoner
 #    BEFORE loading the triple store).
@@ -276,32 +443,44 @@ hw3:SuccessfulEpisode a owl:Class ;
 #    which is what makes cross-graph SPARQL comparison possible.
 # =============================================================================
 hw3:hasPositionX a owl:DatatypeProperty ;
-    rdfs:domain soma:6DPose ; rdfs:range xsd:double ;
-    rdfs:label "target x (meters)"@en .
+    rdfs:domain pos:Position ; rdfs:range xsd:double ;
+    rdfs:label "position x (meters)"@en .
 hw3:hasPositionY a owl:DatatypeProperty ;
-    rdfs:domain soma:6DPose ; rdfs:range xsd:double ;
-    rdfs:label "target y (meters)"@en .
+    rdfs:domain pos:Position ; rdfs:range xsd:double ;
+    rdfs:label "position y (meters)"@en .
 hw3:hasPositionZ a owl:DatatypeProperty ;
-    rdfs:domain soma:6DPose ; rdfs:range xsd:double ;
-    rdfs:label "target z (meters)"@en .
+    rdfs:domain pos:Position ; rdfs:range xsd:double ;
+    rdfs:label "position z (meters)"@en .
 
 # (Float literals are always written as "..."^^xsd:double — a bare 0.35 in
 #  Turtle is xsd:decimal, which conflicts with the xsd:double property range
 #  and makes the reasoner report dtRange violations.)
 hw3:target_near a soma:6DPose ;
     rdfs:label "target_near (inside UR5 workspace)"@en ;
+    hw3:hasReferenceFrame "world" ;
+    hw3:hasPositionComponent hw3:target_near_pos .
+hw3:target_near_pos a pos:Position ;
+    qudt:hasUnit unit:M ;
     hw3:hasPositionX "0.35"^^xsd:double ;
     hw3:hasPositionY "0.28"^^xsd:double ;
     hw3:hasPositionZ "0.95"^^xsd:double .
 
 hw3:target_mid a soma:6DPose ;
     rdfs:label "target_mid (outside UR5 reach, inside UR10 reach)"@en ;
-    hw3:hasPositionX "0.90"^^xsd:double ;
+    hw3:hasReferenceFrame "world" ;
+    hw3:hasPositionComponent hw3:target_mid_pos .
+hw3:target_mid_pos a pos:Position ;
+    qudt:hasUnit unit:M ;
+    hw3:hasPositionX "0.9"^^xsd:double ;
     hw3:hasPositionY "0.13"^^xsd:double ;
-    hw3:hasPositionZ "0.80"^^xsd:double .
+    hw3:hasPositionZ "0.8"^^xsd:double .
 
 hw3:target_far a soma:6DPose ;
     rdfs:label "target_far (outside both workspaces)"@en ;
-    hw3:hasPositionX "1.80"^^xsd:double ;
-    hw3:hasPositionY "0.50"^^xsd:double ;
+    hw3:hasReferenceFrame "world" ;
+    hw3:hasPositionComponent hw3:target_far_pos .
+hw3:target_far_pos a pos:Position ;
+    qudt:hasUnit unit:M ;
+    hw3:hasPositionX "1.8"^^xsd:double ;
+    hw3:hasPositionY "0.5"^^xsd:double ;
     hw3:hasPositionZ "0.95"^^xsd:double .

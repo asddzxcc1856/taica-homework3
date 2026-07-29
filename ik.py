@@ -45,7 +45,12 @@ def pybullet_ik(robot_id, new_pose : list or tuple or np.ndarray,
 
 
 def your_ik(robot_id, new_pose : list or tuple or np.ndarray, 
-                base_pos, max_iters : int=1000, stop_thresh : float=.001):
+                base_pos, max_iters : int=1000, stop_thresh : float=.001,
+                trajectory_out : list=None):
+    # trajectory_out: optional list; when given, the solver appends one
+    # sample dict per iteration ({'iteration', 'q', 'ee_pose', 'residual'})
+    # — the joint-space convergence trajectory used by the semantic layer
+    # (semantic/ground_task2_ik.py) for symbol grounding.
 
 
 

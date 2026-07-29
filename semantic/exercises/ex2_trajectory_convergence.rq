@@ -1,0 +1,16 @@
+# Exercise 2 · Trajectory Convergence Analysis  (STUDENT TODO)
+#
+# 目的: 利用 IK solver trajectory 知識分析收斂行為。
+# 每條軌跡回答: 是否收斂 (首末殘差比較)? 用了幾次 iteration?
+# 哪個 target 收斂較慢 (ORDER BY ?iters)?
+PREFIX hw3: <http://taica.course/hw3/ontology#>
+
+SELECT *   # STUDENT TODO: 改成題目要求的變數
+WHERE {
+  # ------------------------- your query -------------------------
+  # hint: ?ik hw3:hasSolutionTrajectory ?traj .  ?traj hw3:hasTotalIterationCount ?iters .
+  # hint: 首樣本: hw3:hasSampleIndex 0 ; hw3:hasSampleResidual ?firstResidual
+  # hint: 末樣本: 子查詢 { SELECT ?traj (MAX(?i) AS ?lastIdx) WHERE {...} GROUP BY ?traj }
+  # hint: 收斂判斷: IF(?lastResidual < ?firstResidual, ...)
+  # ---------------------------------------------------------------
+}

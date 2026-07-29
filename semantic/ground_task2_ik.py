@@ -35,7 +35,8 @@ GROUP_ID = 'student-group-00'
 # ---------------------------------------------------------------------------
 # STUDENT TODO: IK evaluation result -> triples
 # ---------------------------------------------------------------------------
-def ik_result_to_triples(target_uri, joint_config, ik_status, residual):
+def ik_result_to_triples(target_uri, joint_config, ik_status, residual,
+                         trajectory=None):
     """Ground one IK result into triples; return Turtle lines (list of str).
 
     Must include one IK instance (suggested URI: stu:ik_<target_uri>) of
@@ -48,8 +49,15 @@ def ik_result_to_triples(target_uri, joint_config, ik_status, residual):
                                 means Q3 will never find your results
       - hw3:hasIKStatus        "SOLVED" / "OUT_OF_REACH" / ... (string)
       - hw3:hasResidual        residual (double, e.g. "0.003"^^xsd:double)
-      - hw3:hasJointConfiguration  JSON string (see fk_result_to_triples
-                                in ground_task1_fk.py)
+      - hw3:hasJointConfiguration  a STRUCTURED hw3:JointConfiguration node
+                                (6x soma:JointState linked to the joint
+                                individuals; build it with
+                                common.joint_config_to_ttl — JSON-string
+                                literals are NOT accepted)
+      - hw3:hasSolutionTrajectory  (optional but recommended) the solver's
+                                convergence trajectory recorded via
+                                your_ik(..., trajectory_out=[]), serialized
+                                with common.trajectory_to_ttl
 
     Hint: compare with ta:ik_ta_target_near in ontology/ta-robot-graph.ttl.
     """
@@ -81,22 +89,31 @@ def main():
         target_pose_7d = list(target['position']) + list(home_quat)
         common.reset_arm(robot, HOME_JOINTS)
 
+        trajectory = []
         if args.reference:
             joints = list(np.asarray(
                 pybullet_ik(robot.robot_id, target_pose_7d))[:6])
             eef_pos = common.sim_eef_pose(robot, joints)[:3]
         else:
-            joints = list(your_ik(robot.robot_id, target_pose_7d,
-                                  base_pos=base_pos))
+            try:
+                joints = list(your_ik(robot.robot_id, target_pose_7d,
+                                      base_pos=base_pos,
+                                      trajectory_out=trajectory))
+            except TypeError:
+                # your_ik without the optional trajectory_out kwarg —
+                # solutions still ground, just without a trajectory
+                joints = list(your_ik(robot.robot_id, target_pose_7d,
+                                      base_pos=base_pos))
             eef_pos, _ = your_fk(dh_params, joints, base_pos)
             eef_pos = eef_pos[:3]
 
         status, residual = common.classify_ik_result(
             eef_pos, target['position'], base_pos)
-        print('[IK-EVAL] {} -> status={}, residual={:.4f} m'.format(
-            target['uri'], status, residual))
+        print('[IK-EVAL] {} -> status={}, residual={:.4f} m ({} solver samples)'.format(
+            target['uri'], status, residual, len(trajectory)))
         lines += ik_result_to_triples(
-            target['uri'], joints, status, round(residual, 5))
+            target['uri'], joints, status, round(residual, 5),
+            trajectory=trajectory)
 
     common.write_graph(OUTPUT_FILE, lines, GROUP_ID, 'ground_task2_ik.py')
 

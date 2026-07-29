@@ -2,6 +2,8 @@
 @prefix cora: <http://purl.org/ieee1872-owl/cora-bare#> .
 @prefix soma: <http://www.ease-crc.org/ont/SOMA.owl#> .
 @prefix ta:  <http://taica.course/hw3/data/ta#> .
+@prefix qudt: <http://qudt.org/schema/qudt/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 # =============================================================================
@@ -52,7 +54,34 @@ ta:ik_ta_target_near a hw3:IKComputation ;
     hw3:solvesForTarget hw3:target_near ;
     hw3:hasIKStatus "SOLVED" ;
     hw3:hasResidual "0.0012"^^xsd:double ;
-    hw3:hasJointConfiguration "[-2.994, -1.237, 1.156, -1.489, -1.571, 0.147]" .
+    hw3:hasJointConfiguration ta:ik_ta_target_near_q .
+
+ta:ik_ta_target_near_q a hw3:JointConfiguration ;
+    hw3:hasJointState ta:ik_ta_target_near_q_js1 , ta:ik_ta_target_near_q_js2 , ta:ik_ta_target_near_q_js3 , ta:ik_ta_target_near_q_js4 , ta:ik_ta_target_near_q_js5 , ta:ik_ta_target_near_q_js6 .
+ta:ik_ta_target_near_q_js1 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint1 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "-2.994"^^xsd:double .
+ta:ik_ta_target_near_q_js2 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint2 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "-1.237"^^xsd:double .
+ta:ik_ta_target_near_q_js3 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint3 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "1.156"^^xsd:double .
+ta:ik_ta_target_near_q_js4 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint4 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "-1.489"^^xsd:double .
+ta:ik_ta_target_near_q_js5 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint5 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "-1.571"^^xsd:double .
+ta:ik_ta_target_near_q_js6 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint6 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "0.147"^^xsd:double .
 
 ta:ik_ta_target_mid a hw3:IKComputation ;
     hw3:producedBy "ta-reference-pipeline" ;
@@ -60,7 +89,34 @@ ta:ik_ta_target_mid a hw3:IKComputation ;
     hw3:solvesForTarget hw3:target_mid ;
     hw3:hasIKStatus "SOLVED" ;
     hw3:hasResidual "0.0038"^^xsd:double ;
-    hw3:hasJointConfiguration "[-3.312, -0.842, 0.988, -1.717, -1.571, -0.171]" .
+    hw3:hasJointConfiguration ta:ik_ta_target_mid_q .
+
+ta:ik_ta_target_mid_q a hw3:JointConfiguration ;
+    hw3:hasJointState ta:ik_ta_target_mid_q_js1 , ta:ik_ta_target_mid_q_js2 , ta:ik_ta_target_mid_q_js3 , ta:ik_ta_target_mid_q_js4 , ta:ik_ta_target_mid_q_js5 , ta:ik_ta_target_mid_q_js6 .
+ta:ik_ta_target_mid_q_js1 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint1 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "-3.312"^^xsd:double .
+ta:ik_ta_target_mid_q_js2 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint2 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "-0.842"^^xsd:double .
+ta:ik_ta_target_mid_q_js3 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint3 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "0.988"^^xsd:double .
+ta:ik_ta_target_mid_q_js4 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint4 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "-1.717"^^xsd:double .
+ta:ik_ta_target_mid_q_js5 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint5 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "-1.571"^^xsd:double .
+ta:ik_ta_target_mid_q_js6 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint6 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "-0.171"^^xsd:double .
 
 ta:ik_ta_target_far a hw3:IKComputation ;
     hw3:producedBy "ta-reference-pipeline" ;
@@ -68,4 +124,31 @@ ta:ik_ta_target_far a hw3:IKComputation ;
     hw3:solvesForTarget hw3:target_far ;
     hw3:hasIKStatus "OUT_OF_REACH" ;
     hw3:hasResidual "0.8091"^^xsd:double ;
-    hw3:hasJointConfiguration "[-3.142, -1.571, 1.571, -1.571, -1.571, 0.0]" .
+    hw3:hasJointConfiguration ta:ik_ta_target_far_q .
+
+ta:ik_ta_target_far_q a hw3:JointConfiguration ;
+    hw3:hasJointState ta:ik_ta_target_far_q_js1 , ta:ik_ta_target_far_q_js2 , ta:ik_ta_target_far_q_js3 , ta:ik_ta_target_far_q_js4 , ta:ik_ta_target_far_q_js5 , ta:ik_ta_target_far_q_js6 .
+ta:ik_ta_target_far_q_js1 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint1 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "-3.142"^^xsd:double .
+ta:ik_ta_target_far_q_js2 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint2 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "-1.571"^^xsd:double .
+ta:ik_ta_target_far_q_js3 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint3 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "1.571"^^xsd:double .
+ta:ik_ta_target_far_q_js4 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint4 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "-1.571"^^xsd:double .
+ta:ik_ta_target_far_q_js5 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint5 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "-1.571"^^xsd:double .
+ta:ik_ta_target_far_q_js6 a soma:JointState ;
+    hw3:isStateOfJoint ta:ta_ur10_joint6 ;
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "0.0"^^xsd:double .

@@ -1,0 +1,579 @@
+<title>HW3 學生引導手冊</title>
+<style>
+  :root {
+    --bg: #F5F7F8;
+    --surface: #FFFFFF;
+    --ink: #1C2833;
+    --muted: #5C7183;
+    --accent: #0F7D9F;
+    --accent-soft: #E3F0F5;
+    --derived: #A3690F;
+    --derived-soft: #F7EEDD;
+    --line: #DCE4E9;
+    --code-bg: #F0F4F6;
+    --chip-outline: #B9C7D1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0F161C;
+      --surface: #161F28;
+      --ink: #D9E5EF;
+      --muted: #8CA1B3;
+      --accent: #4EC0E4;
+      --accent-soft: #14313D;
+      --derived: #E2A957;
+      --derived-soft: #33270F;
+      --line: #253442;
+      --code-bg: #121B23;
+      --chip-outline: #3A4C5B;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F161C; --surface: #161F28; --ink: #D9E5EF; --muted: #8CA1B3;
+    --accent: #4EC0E4; --accent-soft: #14313D; --derived: #E2A957;
+    --derived-soft: #33270F; --line: #253442; --code-bg: #121B23;
+    --chip-outline: #3A4C5B;
+  }
+  :root[data-theme="light"] {
+    --bg: #F5F7F8; --surface: #FFFFFF; --ink: #1C2833; --muted: #5C7183;
+    --accent: #0F7D9F; --accent-soft: #E3F0F5; --derived: #A3690F;
+    --derived-soft: #F7EEDD; --line: #DCE4E9; --code-bg: #F0F4F6;
+    --chip-outline: #B9C7D1;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Avenir Next", "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.75;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 0 24px 96px; }
+
+  header.masthead { padding: 56px 0 8px; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--accent); font-weight: 600;
+  }
+  h1 {
+    font-size: 30px; line-height: 1.3; margin: 8px 0 10px;
+    letter-spacing: .01em; text-wrap: balance;
+  }
+  .lede { color: var(--muted); max-width: 62ch; margin: 0; }
+
+  nav.toc {
+    position: sticky; top: 0; z-index: 5;
+    background: var(--bg);
+    border-bottom: 1px solid var(--line);
+    margin: 28px -24px 0; padding: 10px 24px;
+    display: flex; gap: 8px; flex-wrap: wrap;
+  }
+  nav.toc a {
+    text-decoration: none; color: var(--muted);
+    font-size: 13px; padding: 3px 12px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--surface);
+  }
+  nav.toc a:hover { color: var(--accent); border-color: var(--accent); }
+
+  section { margin-top: 64px; scroll-margin-top: 64px; }
+  .task-eyebrow {
+    display: inline-block; font-size: 12px; font-weight: 700;
+    letter-spacing: .12em; color: var(--accent);
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 2px; margin-bottom: 6px;
+  }
+  h2 { font-size: 22px; margin: 4px 0 8px; text-wrap: balance; }
+  h3 {
+    font-size: 13px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted); margin: 30px 0 10px; font-weight: 700;
+  }
+  p { max-width: 68ch; }
+  .sec-intro { color: var(--muted); max-width: 66ch; margin-top: 0; }
+
+  /* 三層架構圖 */
+  .layers { display: flex; flex-direction: column; gap: 0; margin: 26px 0 8px; }
+  .layer {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 8px; padding: 14px 18px;
+    display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap;
+  }
+  .layer strong { font-size: 15px; white-space: nowrap; }
+  .layer span { color: var(--muted); font-size: 13.5px; }
+  .layer-arrow {
+    color: var(--muted); font-size: 12.5px; padding: 4px 0 4px 26px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  /* 流程步驟 */
+  ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 12px 0; max-width: 70ch; }
+  ol.steps li {
+    counter-increment: step; position: relative;
+    padding: 0 0 14px 44px;
+  }
+  ol.steps li::before {
+    content: counter(step);
+    position: absolute; left: 0; top: 2px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent);
+    font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  ol.steps li:not(:last-child)::after {
+    content: ""; position: absolute; left: 12.5px; top: 32px; bottom: 2px;
+    width: 1px; background: var(--line);
+  }
+  ol.steps code { font-size: 12.5px; }
+
+  /* 表格 */
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+  th, td { text-align: left; padding: 9px 14px; border-top: 1px solid var(--line); vertical-align: top; }
+  thead th {
+    border-top: none; font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--muted); background: transparent;
+  }
+  td.num, th.num { font-variant-numeric: tabular-nums; }
+  td code, li code, p code {
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 12.5px; background: var(--code-bg);
+    padding: 1px 5px; border-radius: 4px;
+  }
+
+  /* 來源 chip:標準引用 vs 自創 vs 推理導出 */
+  .chip {
+    display: inline-block; font-size: 11.5px; font-weight: 600;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    padding: 1px 8px; border-radius: 999px; white-space: nowrap;
+  }
+  .chip.std { background: var(--accent-soft); color: var(--accent); }
+  .chip.mint { background: transparent; color: var(--muted); border: 1px solid var(--chip-outline); }
+  .chip.inf { background: var(--derived-soft); color: var(--derived); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin: 14px 0 0; }
+  .legend .chip { transform: translateY(1px); }
+
+  /* TTL code block */
+  pre.ttl {
+    background: var(--code-bg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 16px 18px; overflow-x: auto;
+    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    font-size: 12.5px; line-height: 1.65; margin: 14px 0;
+  }
+  pre.ttl .c { color: var(--muted); font-style: italic; }
+  pre.ttl .k { color: var(--accent); }
+  .src {
+    font-size: 12px; color: var(--muted); margin: -8px 0 0;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  /* 推理導出 callout */
+  .derived {
+    border-left: 3px solid var(--derived);
+    background: var(--derived-soft);
+    border-radius: 0 8px 8px 0;
+    padding: 12px 18px; margin: 18px 0; max-width: 74ch;
+  }
+  .derived .tag {
+    font-size: 11.5px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--derived);
+  }
+  .derived code {
+    background: transparent; padding: 0;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px;
+  }
+  .derived p { margin: 4px 0 0; font-size: 13.5px; }
+
+  .note { font-size: 13.5px; color: var(--muted); max-width: 70ch; }
+
+  footer {
+    margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--line);
+    font-size: 12.5px; color: var(--muted);
+  }
+  @media (max-width: 640px) {
+    h1 { font-size: 24px; }
+    .wrap { padding: 0 16px 64px; }
+    nav.toc { margin: 24px -16px 0; padding: 10px 16px; }
+  }
+</style>
+
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">NYCU Physical AI · HW3 Robot Manipulation</div>
+  <h1>HW3 學生引導手冊 — Task 1–4</h1>
+  <p class="lede">UR5 運動學 × Transporter Network × 語意知識圖。本手冊帶你走過四個任務的流程、
+  每一步該 ground 的語意資訊與它的下游用途。全作業使用同一套<strong>結構化表示法</strong>：
+  數值掛在型別化節點上、引用既有機器人本體、不使用 JSON 字串 literal。</p>
+</header>
+
+<nav class="toc">
+  <a href="#base">共通語意基座</a>
+  <a href="#t1">Task 1 · FK</a>
+  <a href="#t2">Task 2 · IK</a>
+  <a href="#t3">Task 3 · Transporter</a>
+  <a href="#t4">Task 4 · Triple Store</a>
+  <a href="#reasoning">推論能力與學生練習</a>
+</nav>
+
+<!-- ================================================================ -->
+<section id="base">
+  <h2>共通語意基座</h2>
+  <p class="sec-intro">整個作業採三層式架構：數值層產生事實，Grounding 層把事實轉成 RDF，語意層做 OWL 推理與 SPARQL 查詢。</p>
+
+  <div class="layers">
+    <div class="layer"><strong>1 · 數值層</strong><span>fk.py / ik.py / ravens — 關節角、pose、殘差、reward（PyBullet 模擬）</span></div>
+    <div class="layer-arrow">│ Symbol Grounding（ground_task*.py + common.py 序列化 helper）▼</div>
+    <div class="layer"><strong>2 · 語意層</strong><span>hw3-ontology.ttl 共用詞彙 + 各任務知識圖（Turtle，結構化節點）</span></div>
+    <div class="layer-arrow">│ Jena OWL Reasoner ▼</div>
+    <div class="layer"><strong>3 · 推理層</strong><span>一致性檢查 + 具體化：評估類（PassedFK / SolvedIK / SuccessfulEpisode）與 gate 類全由推理導出</span></div>
+    <div class="layer-arrow">│ TDB2 / Fuseki 載入 ▼</div>
+    <div class="layer"><strong>4 · 查詢分析層</strong><span>q1–q4 SPARQL + 練習 1–3：規格摘要、限位審計、軌跡分析、跨機器人互通比較</span></div>
+    <div class="layer-arrow">│ 推理結果驅動動作裁決 ▼</div>
+    <div class="layer"><strong>5 · 決策層</strong><span>Semantic Gate（練習 4・加分項目）：ALLOW / REFUSE ＋ 可解釋的推理鏈</span></div>
+  </div>
+
+  <h3>命名空間</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>Prefix</th><th>IRI</th><th>角色</th></tr></thead>
+    <tbody>
+      <tr><td><span class="chip std">cora:</span></td><td><code>purl.org/ieee1872-owl/cora-bare#</code></td><td>IEEE 1872 CORA — 機器人（<code>cora:Robot</code>）</td></tr>
+      <tr><td><span class="chip std">soma:</span></td><td><code>ease-crc.org/ont/SOMA.owl#</code></td><td>SOMA — 關節、關節狀態、6D pose、episode、軌跡</td></tr>
+      <tr><td><span class="chip std">pos:</span></td><td><code>purl.org/ieee1872-owl/pos#</code></td><td>IEEE 1872 POS — Position / Orientation / Pose</td></tr>
+      <tr><td><span class="chip std">dul:</span></td><td><code>ontologydesignpatterns.org/ont/dul/DUL.owl#</code></td><td>DUL 上層本體 — Event / Region / hasComponent / directlyPrecedes</td></tr>
+      <tr><td><span class="chip std">qudt: unit:</span></td><td><code>qudt.org/schema/qudt/</code> · <code>qudt.org/vocab/unit/</code></td><td>QUDT 單位 — <code>unit:M</code>（公尺）、<code>unit:RAD</code>（弧度）</td></tr>
+      <tr><td><span class="chip mint">hw3:</span></td><td><code>taica.course/hw3/ontology#</code></td><td>課程自創詞彙（僅限標準本體沒有的概念）</td></tr>
+      <tr><td><span class="chip mint">stu: / ta:</span></td><td><code>taica.course/hw3/data/&lt;id&gt;#</code></td><td>各程式的資料命名空間（provenance 隔離、免 URI 碰撞）</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>結構化三原則</h3>
+  <ol class="steps">
+    <li><strong>不用 JSON 字串。</strong>Pose 與關節向量是結構化節點：<code>soma:6DPose</code> = <code>pos:Position</code>（x/y/z）＋ <code>hw3:QuaternionOrientation</code>（qx/qy/qz/qw）＋ 參考座標系；關節組態 = <code>hw3:JointConfiguration</code> 聚合 6 個 <code>soma:JointState</code>，每個以 <code>hw3:isStateOfJoint</code> 指回關節個體。</li>
+    <li><strong>數值是型別化 literal、單位是 QUDT IRI。</strong>一律 <code>"..."^^xsd:double</code>（裸浮點會變 xsd:decimal 觸發 range 檢查錯誤）；<code>qudt:hasUnit unit:M / unit:RAD</code>。</li>
+    <li><strong>每個個體帶 <code>hw3:producedBy</code>。</strong>獨立程式（你的 UR5、TA 的 UR10）寫進同一個 store 仍可區分與互查。</li>
+  </ol>
+
+  <div class="legend">
+    <span><span class="chip std">標準引用</span> 既有本體詞彙（IRI 與官方一致，離線存根）</span>
+    <span><span class="chip mint">hw3: 自創</span> 課程特有概念</span>
+    <span><span class="chip inf">推理導出</span> 只由 OWL reasoner 具體化，程式從不直接寫入</span>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<section id="t1">
+  <div class="task-eyebrow">TASK 1</div>
+  <h2>Forward Kinematics — 正向運動學</h2>
+  <p class="sec-intro">實作 <code>your_fk()</code>：classic DH 連乘求 EE pose ＋ 幾何 Jacobian。語意層 ground 兩件事：機器人規格（關節個體＋DH 參數）與每筆測資的評估結果。</p>
+
+  <h3>過程</h3>
+  <ol class="steps">
+    <li>實作 <code>fk.py</code> 的 <code>your_fk(DH_params, q, base_pos)</code>；<code>python fk.py</code> 以 easy / medium / hard 測資評分（pose 誤差門檻 0.005、Jacobian 門檻 0.05，各 10%）。</li>
+    <li><code>semantic/ground_task1_fk.py</code> 對 3 筆 easy 測資執行 <code>your_fk</code>，與 ground truth 比對得 <code>pose_error</code> / <code>jacobian_error</code> → <code>PASS</code> / <code>FAIL</code>。</li>
+    <li>Ground 機器人規格：<code>stu:my_ur5 a cora:Robot</code> ＋ 6 個 <code>soma:RevoluteJoint</code> 個體（DH a/d/α、限位、關節序）。</li>
+    <li>Ground 每筆 FK 評估：輸入關節組態與 EE pose 都是結構化節點 → 輸出 <code>output/task1_fk_graph.ttl</code>。</li>
+  </ol>
+
+  <h3>語意定義</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>詞彙</th><th>來源</th><th>定義</th></tr></thead>
+    <tbody>
+      <tr><td><code>cora:Robot</code></td><td><span class="chip std">CORA</span></td><td>機器人個體（<code>stu:my_ur5</code>、<code>ta:ta_ur10</code>）</td></tr>
+      <tr><td><code>soma:RevoluteJoint</code></td><td><span class="chip std">SOMA</span></td><td>旋轉關節個體，掛 <code>hw3:jointIndex</code>、<code>hw3:dh_a / dh_d / dh_alpha</code>、上下限位</td></tr>
+      <tr><td><code>hw3:hasJoint</code></td><td><span class="chip mint">hw3:</span></td><td>機器人 → 關節（⊑ <code>dul:hasComponent</code>）</td></tr>
+      <tr><td><code>hw3:FKComputation</code></td><td><span class="chip mint">hw3:</span></td><td>一次 FK 計算（⊑ <code>hw3:KinematicComputation</code> ⊑ <code>dul:Event</code>）</td></tr>
+      <tr><td><code>hw3:hasInputJointConfiguration</code></td><td><span class="chip mint">hw3:</span></td><td>ObjectProperty → <code>hw3:JointConfiguration</code>（6 × <code>soma:JointState</code>）</td></tr>
+      <tr><td><code>hw3:hasEndEffectorPose</code></td><td><span class="chip mint">hw3:</span></td><td>ObjectProperty → <code>soma:6DPose</code>（world frame）</td></tr>
+      <tr><td><code>hw3:hasPoseError / hasJacobianError / hasEvaluationStatus</code></td><td><span class="chip mint">hw3:</span></td><td>與 GT 的 L2 誤差（<code>xsd:double</code>）、<code>"PASS"/"FAIL"</code>（數值層判定）</td></tr>
+    </tbody>
+  </table></div>
+
+  <p class="note"><strong>為下游而 ground</strong>：限位 → 練習 1（限位審計）；DH 參數 → 練習 3（臂長證據）；PASS → q4 評估報表。這些欄位是需求，不是建議。</p>
+
+  <h3>範例（你的圖應長這樣）</h3>
+  <pre class="ttl"><span class="c"># 機器人規格:關節是 soma:Joint 個體,帶 classic DH 參數</span>
+stu:my_ur5_joint1 <span class="k">a</span> soma:RevoluteJoint ;
+    hw3:jointIndex 1 ;
+    hw3:dh_a "0.0"^^xsd:double ;  hw3:dh_d "0.0892"^^xsd:double ;
+    hw3:dh_alpha "1.570796"^^xsd:double ;
+    hw3:hasJointLowerLimit "-4.712389"^^xsd:double ;
+    hw3:hasJointUpperLimit "-1.570796"^^xsd:double .
+
+<span class="c"># 一筆 FK 評估:輸入組態與 EE pose 都是結構化節點</span>
+stu:fk_case_0 <span class="k">a</span> hw3:FKComputation ;
+    hw3:producedBy "313551000" ;
+    hw3:computedForRobot stu:my_ur5 ;
+    hw3:hasInputJointConfiguration stu:fk_case_0_q ;
+    hw3:hasEndEffectorPose stu:fk_case_0_ee ;
+    hw3:hasPoseError "0.000625"^^xsd:double ;
+    hw3:hasJacobianError "0.000316"^^xsd:double ;
+    hw3:hasEvaluationStatus "PASS" .
+
+stu:fk_case_0_q_js1 <span class="k">a</span> soma:JointState ;          <span class="c"># 之一,共 6 個</span>
+    hw3:isStateOfJoint stu:my_ur5_joint1 ;       <span class="c"># 指回關節個體</span>
+    qudt:hasUnit unit:RAD ;
+    soma:hasJointPosition "-3.154407"^^xsd:double .
+
+stu:fk_case_0_ee <span class="k">a</span> soma:6DPose ;
+    hw3:hasReferenceFrame "world" ;
+    hw3:hasPositionComponent stu:fk_case_0_ee_pos ;
+    hw3:hasOrientationComponent stu:fk_case_0_ee_ori .
+stu:fk_case_0_ee_pos <span class="k">a</span> pos:Position ;
+    qudt:hasUnit unit:M ;
+    hw3:hasPositionX "0.287046"^^xsd:double ;
+    hw3:hasPositionY "0.233046"^^xsd:double ;
+    hw3:hasPositionZ "0.912072"^^xsd:double .</pre>
+  <p class="src">semantic/output/task1_fk_graph.ttl</p>
+
+  <div class="derived">
+    <span class="tag">推理導出 · Task 1 評估類</span>
+    <p><code>hw3:PassedFKComputation ≡ hw3:FKComputation ⊓ (hw3:hasEvaluationStatus value "PASS")</code></p>
+    <p>成員只由 OWL reasoner 從等價類導出；跳過推理步驟，q4 就查不到任何 PassedFKComputation。</p>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<section id="t2">
+  <div class="task-eyebrow">TASK 2</div>
+  <h2>Inverse Kinematics — 逆向運動學（含軌跡 Grounding）</h2>
+  <p class="sec-intro">實作 <code>your_ik()</code>：Damped Least Squares 迭代解，靠 <code>your_fk</code> 提供 pose 與 Jacobian。語意層 ground 三件事：求解狀態、結構化關節解、以及 solver 的<strong>逐迭代收斂軌跡</strong>。</p>
+
+  <h3>過程</h3>
+  <ol class="steps">
+    <li>實作 <code>ik.py</code> 的 <code>your_ik(robot_id, pose, base_pos, ..., trajectory_out=None)</code>；<code>python ik.py</code> 評分（誤差門檻 0.02，40%）。<code>trajectory_out</code> 是統一介面：傳入 list 即記錄每次迭代的 <code>(iteration, q, EE pose, residual)</code>。</li>
+    <li><code>semantic/ground_task2_ik.py</code> 對三個<strong>共用目標</strong>（<code>hw3:target_near / target_mid / target_far</code>）呼叫 <code>your_ik(..., trajectory_out=[])</code>。</li>
+    <li>依殘差與工作空間幾何判定狀態：<code>SOLVED</code> / <code>OUT_OF_REACH</code> / <code>NO_CONVERGENCE</code>。</li>
+    <li>Ground IK 結果 ＋ 軌跡（降採樣至 ≤ 6 個樣本、保頭尾）→ <code>output/task2_ik_graph.ttl</code>。</li>
+  </ol>
+
+  <h3>語意定義</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>詞彙</th><th>來源</th><th>定義</th></tr></thead>
+    <tbody>
+      <tr><td><code>soma:6DPose</code>（⊑ <code>pos:Pose</code>, <code>dul:Region</code>）</td><td><span class="chip std">SOMA</span></td><td>共用目標 <code>hw3:target_*</code>：跨圖比較的 join key，座標在 <code>pos:Position</code> 元件節點上</td></tr>
+      <tr><td><code>hw3:IKComputation</code></td><td><span class="chip mint">hw3:</span></td><td>一次 IK 計算（⊑ <code>dul:Event</code>）</td></tr>
+      <tr><td><code>hw3:solvesForTarget</code></td><td><span class="chip mint">hw3:</span></td><td>IK → 目標 pose（⊑ <code>dul:hasRegion</code>）</td></tr>
+      <tr><td><code>hw3:hasIKStatus / hasResidual</code></td><td><span class="chip mint">hw3:</span></td><td>求解狀態字串、Cartesian 殘差（公尺）</td></tr>
+      <tr><td><code>hw3:hasJointConfiguration</code></td><td><span class="chip mint">hw3:</span></td><td>ObjectProperty → 結構化 <code>hw3:JointConfiguration</code></td></tr>
+      <tr><td><code>hw3:SolverTrajectory</code>（⊑ <code>soma:Trajectory</code>）</td><td><span class="chip std">SOMA</span> <span class="chip mint">hw3:</span></td><td>solver 在關節空間的收斂路徑</td></tr>
+      <tr><td><code>hw3:TrajectorySample</code></td><td><span class="chip mint">hw3:</span></td><td>一個樣本：<code>hasSampleIndex</code> / <code>atSolverIteration</code> / <code>hasSampleResidual</code> ＋ 關節組態 ＋ EE pose（由 <code>your_fk</code> 計算）</td></tr>
+      <tr><td><code>dul:directlyPrecedes</code></td><td><span class="chip std">DUL</span></td><td>樣本間的順序鏈</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>範例（你的圖應長這樣）</h3>
+  <pre class="ttl">stu:ik_target_near <span class="k">a</span> hw3:IKComputation ;
+    hw3:producedBy "313551000" ;
+    hw3:computedForRobot stu:my_ur5 ;
+    hw3:solvesForTarget hw3:target_near ;        <span class="c"># 共用 URI = join key</span>
+    hw3:hasIKStatus "SOLVED" ;
+    hw3:hasResidual "0.00053"^^xsd:double ;
+    hw3:hasSolutionTrajectory stu:ik_target_near_traj ;
+    hw3:hasJointConfiguration stu:ik_target_near_q .
+
+<span class="c"># solver 收斂軌跡:9 次迭代,降採樣為 6 個樣本</span>
+stu:ik_target_near_traj <span class="k">a</span> hw3:SolverTrajectory ;
+    hw3:hasSampleCount 6 ;
+    hw3:hasTotalIterationCount 9 ;
+    hw3:hasTrajectorySample stu:ik_target_near_traj_s0 , ... , _s5 .
+
+stu:ik_target_near_traj_s0 <span class="k">a</span> hw3:TrajectorySample ;
+    hw3:hasSampleIndex 0 ;
+    hw3:atSolverIteration 0 ;
+    hw3:hasSampleResidual "0.084313"^^xsd:double ;
+    hw3:hasJointConfiguration stu:ik_target_near_traj_s0_q ;  <span class="c"># 關節空間</span>
+    hw3:hasEndEffectorPose stu:ik_target_near_traj_s0_ee ;    <span class="c"># 工作空間 (FK)</span>
+    dul:directlyPrecedes stu:ik_target_near_traj_s1 .</pre>
+  <p class="src">semantic/output/task2_ik_graph.ttl</p>
+
+  <p class="note"><strong>為下游而 ground</strong>：結構化 <code>soma:JointState</code> → 練習 1（與限位 join）；solver 軌跡 → 練習 2（收斂分析）；共用 target URI + 狀態 → 練習 3 / q2 / q3（跨機器人互查）。</p>
+
+  <div class="derived">
+    <span class="tag">推理導出 · Task 2 評估類</span>
+    <p><code>hw3:SolvedIKComputation ≡ hw3:IKComputation ⊓ (hw3:hasIKStatus value "SOLVED")</code></p>
+    <p>互通性展示：TA 的 UR10 圖（<code>ta:</code>）對同樣的 target 發佈結果 — <code>target_mid</code> 對 UR10 是 SOLVED、對 UR5 是 OUT_OF_REACH，臂長差異直接呈現在語意層。</p>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<section id="t3">
+  <div class="task-eyebrow">TASK 3</div>
+  <h2>Transporter Network — 積木插入</h2>
+  <p class="sec-intro">用自己的 IK 驅動 Transporter Network 完成 block insertion（prepick → grasp → preplace → insertion）。語意層 ground 每個測試 episode 的結果。</p>
+
+  <h3>過程</h3>
+  <ol class="steps">
+    <li>下載 <code>block-insertion-easy-test/</code> 資料集與 <code>checkpoints/</code> 至 <code>ravens/</code>。</li>
+    <li><code>ravens/test.py</code> 以 <code>your_ik</code> 執行 10 個 episode，寫出 <code>block-insertion-easy-transporter-*.pkl</code>（每回合 total reward）。</li>
+    <li><code>semantic/ground_task3_insertion.py</code> 讀 pkl，reward ≥ 0.999 → <code>SUCCESS</code>，否則 <code>FAILURE</code> → <code>output/task3_insertion_graph.ttl</code>。</li>
+  </ol>
+
+  <h3>語意定義</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>詞彙</th><th>來源</th><th>定義</th></tr></thead>
+    <tbody>
+      <tr><td><code>soma:Episode</code></td><td><span class="chip std">SOMA</span></td><td>一次測試回合（比照 KnowRob NEEM 的 episode 建模）</td></tr>
+      <tr><td><code>hw3:performsTask</code></td><td><span class="chip mint">hw3:</span></td><td>任務名（<code>"block-insertion-easy"</code>）</td></tr>
+      <tr><td><code>hw3:episodeIndex / hasReward / hasOutcome</code></td><td><span class="chip mint">hw3:</span></td><td>回合序、總獎勵（<code>xsd:double</code>）、<code>"SUCCESS"/"FAILURE"</code></td></tr>
+      <tr><td><code>hw3:manipulatesObject</code></td><td><span class="chip mint">hw3:</span></td><td>episode → 被操作物件（<code>stu:ell_block</code>）</td></tr>
+      <tr><td><code>hw3:GraspableObject</code>、<code>hw3:isKinematicallyReachable</code></td><td><span class="chip mint">hw3:</span></td><td><strong>場景語意</strong>：可抓取性（感知層）、可達性（由執行成功 ground）——餵給 Task 4 的 semantic gate</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>範例（你的圖應長這樣）</h3>
+  <pre class="ttl"><span class="c"># 場景語意 (feeds the Task 4 semantic gate)</span>
+stu:ell_block <span class="k">a</span> hw3:GraspableObject ;
+    rdfs:label "L-shaped block (ell.urdf, rigid)" ;
+    hw3:isKinematicallyReachable true .   <span class="c"># 由執行成功 ground</span>
+
+stu:episode_0 <span class="k">a</span> soma:Episode ;
+    hw3:producedBy "313551000" ;
+    hw3:performsTask "block-insertion-easy" ;
+    hw3:manipulatesObject stu:ell_block ;
+    hw3:episodeIndex 0 ;
+    hw3:hasReward "1.0"^^xsd:double ;
+    hw3:hasOutcome "SUCCESS" .</pre>
+  <p class="src">semantic/output/task3_insertion_graph.ttl</p>
+
+  <p class="note"><strong>為下游而 ground</strong>：episode → q4 報表；場景語意三元組（graspable / reachable）是練習 4 semantic gate 的原料——完成 gate 規則後，同樣的推理也適用於這個真實場景。</p>
+
+  <div class="derived">
+    <span class="tag">推理導出 · Task 3 評估類</span>
+    <p><code>hw3:SuccessfulEpisode ≡ soma:Episode ⊓ (hw3:hasOutcome value "SUCCESS")</code></p>
+  </div>
+</section>
+
+<!-- ================================================================ -->
+<section id="t4">
+  <div class="task-eyebrow">TASK 4</div>
+  <h2>Semantic Knowledge &amp; Triple Store</h2>
+  <p class="sec-intro">把 Task 1–3 的知識圖與 TA 的 UR10 圖經 OWL 推理後載入 TDB2 triple store，用 SPARQL 讀出所有任務的評估，並以四個引導式練習走到<strong>語意決策</strong>——這一層不產生新數值，只做推理、互查與決策。</p>
+
+  <h3>學習目標</h3>
+  <ol class="steps">
+    <li><strong>Symbol Grounding</strong>：把數值層事實轉成引用標準本體的結構化 RDF（不是 JSON 字串），並理解「為下游而 ground」——每個欄位都有明確的消費者。</li>
+    <li><strong>OWL Reasoning</strong>：用 equivalentClass（intersectionOf + hasValue）讓評估類由推理導出，而非程式寫死；理解 OWL 做不到數值比較，門檻判斷屬於數值層。</li>
+    <li><strong>Triple Store 與互通性</strong>：共用詞彙 + 共用 target URI + provenance，使獨立開發的程式（你的 UR5、TA 的 UR10、其他組）可載入同一 store 直接互查。</li>
+    <li><strong>Semantic Decision Making</strong>：從資料查詢一路走到 ALLOW/REFUSE 決策——語意閘門（練習 4）用推理結果直接裁決機器人動作，且每個裁決可解釋。</li>
+  </ol>
+
+  <h3>實作項目（學生要做的）</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>項目</th><th>檔案</th><th>引導</th></tr></thead>
+    <tbody>
+      <tr><td>① robot spec grounding</td><td><code>ground_task1_fk.py → robot_spec_to_triples()</code></td><td>照 worked example（<code>fk_result_to_triples</code>）的寫法；必含 DH、限位（練習 1 / 3 的分析靠它們）</td></tr>
+      <tr><td>② IK 結果 grounding</td><td><code>ground_task2_ik.py → ik_result_to_triples()</code></td><td>結構化 <code>JointConfiguration</code> 用 <code>common.joint_config_to_ttl</code>；軌跡用 <code>trajectory_out=[]</code> + <code>common.trajectory_to_ttl</code></td></tr>
+      <tr><td>③ 互通查詢</td><td><code>queries/q3_interop_compare.rq</code></td><td>以共用 target URI join；寫成 <code>stu:</code> 命名空間就 join 不到——先讀 q1/q2/q4</td></tr>
+      <tr><td>④ 四個進階練習</td><td><code>exercises/ex1~ex3*.rq</code>、<code>ex4-semantic-gate.ttl</code></td><td>漸進式：資料驗證 → 過程理解 → 互通 → 決策（練習 4 為<strong>加分項目</strong>，見下）</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>過程（run_task4.sh）</h3>
+  <ol class="steps">
+    <li>檢查工具鏈（JDK 11+ / Python）並準備 Apache Jena 4.10.0（含 TDB2 CLI）。</li>
+    <li>Grounding：依序執行 <code>ground_task1_fk.py</code> / <code>ground_task2_ik.py</code> / <code>ground_task3_insertion.py</code> → 三張任務圖。</li>
+    <li>OWL 推理：Java Jena 載入 <code>hw3-ontology.ttl</code> ＋ 你的三張圖 ＋ <code>ta-robot-graph.ttl</code>，具體化推理結果 → <code>output/inferred_graph.ttl</code>。</li>
+    <li>載入 TDB2 triple store（<code>semantic/store/</code>；Fuseki Web UI 可用 <code>run_fuseki.sh</code>）。</li>
+    <li>執行 q1–q4 → CSV；<code>score_semantic.py</code> 評分（30 分）；<code>make_report.py</code> 產生 dashboard。</li>
+  </ol>
+
+  <h3>四條查詢與實際結果</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>查詢</th><th>語意重點</th><th>預期結果</th></tr></thead>
+    <tbody>
+      <tr><td><code>q1_robot_specs</code></td><td>兩支獨立程式共用 <code>cora:Robot</code>/<code>hw3:</code> 詞彙，一條查詢同時取回</td><td class="num">UR5 + UR10，各 6 joints</td></tr>
+      <tr><td><code>q2_reachable_targets</code></td><td>只查<span class="chip inf">推理導出</span>的 <code>SolvedIKComputation</code>（資料中從未寫入該 type）</td><td class="num">UR5→near；UR10→near, mid</td></tr>
+      <tr><td><code>q3_interop_compare</code></td><td>以共用 target URI 為 join key 的跨機器人矩陣</td><td class="num">3 targets × 2 robots</td></tr>
+      <tr><td><code>q4_task_evaluation_report</code></td><td>一條查詢讀出三個任務的評估類計數</td><td class="num">FK PASS 3 · IK SOLVED 1 · Episode SUCCESS 10</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="derived" style="margin-top:18px">
+    <span class="tag">評分（Task 4 · 30 分 + 練習為報告加分）</span>
+    <p>S1 規格與 DH（8）· S2 三任務評估與推理類（12）· S3 互通比較矩陣（10）。q1–q4 全對即 30/30。</p>
+  </div>
+
+  <h3>決策推理 · Semantic Gate（練習 4・加分項目）</h3>
+  <p class="sec-intro">gate 的兩個條件各來自一層：graspability（感知層，Task 3 場景語意）、reachability（IK／執行結果）。詞彙與類宣告已在本體 §3b 提供，但<strong>推理規則是學生的工作</strong>——在練習 4（加分項目）自己定義 equivalentClass，讓 reasoner 導出可執行目標：</p>
+
+  <div class="derived">
+    <span class="tag">推理導出 · 三條件 gate（學生定義）</span>
+    <p><code>hw3:ExecutableGraspTarget ≡ hw3:GraspableObject ⊓ (hw3:isKinematicallyReachable value true)</code></p>
+    <p>場景圖只含 graspable / reachable <strong>事實</strong>，成員絕不手動 assert——全由 reasoner 從這條規則導出（概念分類交給 OWL，數值判斷留在數值層）。</p>
+  </div>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th>Gate 測試案例（預期結果）</th><th>判決與可解釋理由</th></tr></thead>
+    <tbody>
+      <tr><td>Object A · 桌上積木（graspable ✓ reachable ✓）</td><td><strong>ALLOW</strong>——由你的規則導出</td></tr>
+      <tr><td>Object B · 固定 fixture（graspable ✗ reachable ✓）</td><td><strong>REFUSE</strong>——reachable BUT NOT GraspableObject（語意排除）</td></tr>
+      <tr><td>Object C · 工作空間外積木（graspable ✓ reachable ✗）</td><td><strong>REFUSE</strong>——幾何排除</td></tr>
+    </tbody>
+  </table></div>
+
+  <p class="note"><strong>延伸視野</strong>：同一套 gate 也能接進真實的 Ravens 執行流程——每個 pick-and-place 動作執行前先經 OWL 推理裁決（ALLOW 才執行），並把每筆決策連同結構化 pick pose 記錄成知識圖，事後可用 SPARQL 回查每個動作為何被允許或拒絕。</p>
+</section>
+
+<!-- ================================================================ -->
+<section id="reasoning">
+  <h2>最終推論能做什麼 · 學生可以做哪些</h2>
+  <p class="sec-intro">Jena OWL reasoner 在這套本體上會導出五類推論；結構化表示讓 SPARQL 能「伸進」組態、pose 與軌跡內部——以下是作業可指派的練習選單與設計界線。</p>
+
+  <h3>推理引擎實際導出的五類推論</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>推論類型</th><th>機制</th><th>例子</th></tr></thead>
+    <tbody>
+      <tr><td><span class="chip inf">等價類成員</span></td><td><code>intersectionOf</code> + <code>hasValue</code></td><td><code>PassedFKComputation</code> / <code>SolvedIKComputation</code> / <code>SuccessfulEpisode</code> / <code>ExecutableGraspTarget</code> — 程式從不寫入這些 type，全由推理具體化</td></tr>
+      <tr><td>類階層</td><td><code>rdfs:subClassOf</code> 遞移</td><td>查「所有 <code>dul:Event</code>」自動涵蓋 FK＋IK 計算；<code>RevoluteJoint</code> 個體同時是 <code>soma:Joint</code></td></tr>
+      <tr><td>屬性階層</td><td><code>rdfs:subPropertyOf</code></td><td><code>?x dul:hasComponent ?y</code> 一條查詢同時取回 機器人→關節、組態→關節狀態、軌跡→樣本 三層部分關係</td></tr>
+      <tr><td>型別推導</td><td>domain / range</td><td>掛了 <code>hasJointState</code> 的節點自動被分類為 <code>JointConfiguration</code></td></tr>
+      <tr><td>一致性檢查</td><td><code>validate()</code></td><td>裸浮點（xsd:decimal）、langString 等 range 違規會被報告——型別化 literal 紀律的教學點</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>Task 4 Extension Exercises（進階練習）</h3>
+  <p class="note">練習檔都在 <code>semantic/exercises/</code>（規格與提示見該目錄的 README）；練習 1–3 完成 <code>ex*.rq</code> 後用 <code>run_exercises.sh</code> 對你的 triple store 執行，練習 4（加分）完成 <code>ex4-semantic-gate.ttl</code> 後用 <code>ex4_semantic_gate.py</code> 驗證。四個練習構成漸進式 learning path：<strong>Data Validation → Process Understanding → Knowledge Interoperability → Autonomous Decision Making</strong>。</p>
+
+  <div class="tablewrap"><table>
+    <thead><tr><th>Exercise</th><th>Semantic Skill · 技術</th><th>任務與預期參考結果</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>1 · Joint Limit Audit</strong><br><code>ex1_joint_limit_audit.rq</code></td>
+        <td>Robot State Validation<br><span class="chip mint">SPARQL FILTER</span></td>
+        <td>join JointState 角度與關節限位，輸出 OK / BELOW_LOWER / ABOVE_UPPER。預期：若 solver 有 clip，audit 全 OK（target_far 的 joint1/2 會剛好貼在限位邊界——值得在報告討論）。</td>
+      </tr>
+      <tr>
+        <td><strong>2 · Trajectory Convergence</strong><br><code>ex2_*.rq</code> + <code>ex2b</code></td>
+        <td>Algorithm Process Understanding<br><span class="chip mint">RDF Sequence + Aggregation</span></td>
+        <td>是否收斂／哪個 target 較慢／幾次 iteration。預期：near 少量迭代即收斂（DECREASING）；mid/far 跑滿迭代未收斂；far 可能出現殘差反增（NOT_DECREASING）——用 ex2b 沿 <code>dul:directlyPrecedes</code> 找震盪樣本並解釋。</td>
+      </tr>
+      <tr>
+        <td><strong>3 · Cross Robot Comparison</strong><br><code>ex3_cross_robot_comparison.rq</code></td>
+        <td>Interoperability<br><span class="chip mint">Shared Ontology + JOIN</span></td>
+        <td>預期：同一 <code>target_mid</code> UR5 OUT_OF_REACH、UR10 SOLVED；讓查詢同時從 DH 參數彙總臂長證據（≈0.82 m vs ≈1.18 m）→ 解釋 robot geometry 如何決定 workspace capability。</td>
+      </tr>
+      <tr>
+        <td><strong>4 · Semantic Gate（加分）</strong><br><code>ex4-semantic-gate.ttl</code> + <code>ex4_semantic_gate.py</code></td>
+        <td>Decision Reasoning<br><span class="chip inf">OWL EquivalentClass</span></td>
+        <td>自己定義 gate 推理規則：<code>ExecutableGraspTarget ≡ Graspable ⊓ (reachable value true)</code>。預期：Object A ALLOW（規則導出）；Object B REFUSE（語意排除）；Object C REFUSE（幾何排除）；TODO 未完成時 runner 會給出引導訊息。</td>
+      </tr>
+    </tbody>
+  </table></div>
+
+  <div class="derived">
+    <span class="tag">設計界線（避免踩坑）</span>
+    <p>OWL rule reasoner <strong>做不到</strong>：數值範圍分類（「residual &lt; 0.01」無法用 hasValue 表達）、算術、時序推理。分工原則：<strong>數值判斷在數值層先做成離散狀態字串</strong>（SOLVED / PASS / SUCCESS），<strong>概念分類交給 OWL</strong>，<strong>數值分析交給 SPARQL 的 FILTER 與聚合</strong>。門檻類推理的正確做法是 grounding 時 assert 狀態或在 SPARQL 裡 FILTER，而不是硬塞進 OWL。</p>
+  </div>
+</section>
+
+<footer style="margin-top:80px">NYCU Physical AI · HW3 學生引導手冊 · 課程詞彙 &lt;taica.course/hw3/ontology#&gt;</footer>
+
+</div>
+  <p class="note" style="margin-top:14px">序列化 helper：<code>semantic/common.py</code>（hw3: 版）與 <code>semantic_bridge/ttl_helpers.py</code>（ur5: 版）——<code>pose_to_ttl</code> / <code>joint_config_to_ttl</code> / <code>trajectory_to_ttl</code>。</p>
+
+  <footer>NYCU Physical AI 2025 Fall · HW3 統一結構化語意表示 · 更新於 2026-07-29</footer>
+</section>
+
+</div>

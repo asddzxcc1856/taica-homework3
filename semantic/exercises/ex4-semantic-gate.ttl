@@ -1,0 +1,35 @@
+@prefix hw3:  <http://taica.course/hw3/ontology#> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+# =============================================================================
+# Exercise 4 (BONUS) · Semantic Gate — decision reasoning
+#
+# 詞彙已在 ontology/hw3-ontology.ttl §3b (TA-provided):
+#   - hw3:GraspableObject          (感知層: 語意上可否抓取)
+#   - hw3:isKinematicallyReachable (數值層: IK / 執行結果)
+#   - hw3:ExecutableGraspTarget    (只宣告了類, 推理規則是你的工作)
+#
+# 你的工作: 定義 gate 的推理規則, 讓 reasoner 能導出可執行的抓取目標。
+# =============================================================================
+
+# ---- STUDENT TODO -----------------------------------------------------------
+# 定義 equivalentClass 推理規則:
+#
+#    hw3:ExecutableGraspTarget
+#      ≡ hw3:GraspableObject
+#        ⊓ (hw3:isKinematicallyReachable value true)
+#
+# 提示: owl:equivalentClass + owl:intersectionOf + owl:Restriction(owl:hasValue)
+# 寫法可參考 ontology/hw3-ontology.ttl §4 的三個評估類 (PassedFKComputation 等)
+# — 同一個模式, 只是條件換成「語意可抓取 ⊓ 幾何可達」。
+#
+# 注意: 成員絕不手動 assert — 完成規則後由 OWL reasoner 導出,
+# 這正是「概念分類交給 OWL, 數值判斷留在數值層」的分層原則。
+
+# ------------------------- your ontology -------------------------
+
+
+
+# -----------------------------------------------------------------

@@ -40,9 +40,33 @@ def episode_to_triples(index, reward, outcome):
         'stu:episode_{} a soma:Episode ;'.format(index),
         '    hw3:producedBy "{}" ;'.format(GROUP_ID),
         '    hw3:performsTask "block-insertion-easy" ;',
+        '    hw3:manipulatesObject stu:ell_block ;',
         '    hw3:episodeIndex {} ;'.format(index),
         '    hw3:hasReward "{}"^^xsd:double ;'.format(round(float(reward), 4)),
         '    hw3:hasOutcome "{}" .'.format(outcome),
+        '',
+    ]
+
+
+def scene_to_triples(block_reachable):
+    """Ground the insertion scene's object semantics (TA-provided).
+
+    These facts feed Task 4's semantic-gate reasoning:
+      - graspability   : perception-layer knowledge (the L block is the
+                         manipulated object; the fixture is a fixed target)
+      - reachability   : grounded from EXECUTION — a successful insertion
+                         episode proves the block is kinematically reachable
+    """
+    reachable = 'true' if block_reachable else 'false'
+    return [
+        '# Scene semantics of the insertion task (feeds the Task 4 semantic gate)',
+        'stu:ell_block a hw3:GraspableObject ;',
+        '    rdfs:label "L-shaped block (ell.urdf, rigid)" ;',
+        '    hw3:isKinematicallyReachable {} .'.format(reachable),
+        '',
+        '# reachable placement target, but NOT graspable (no GraspableObject type)',
+        'stu:insertion_fixture rdfs:label "fixture (ell.urdf, fixed)" ;',
+        '    hw3:isKinematicallyReachable {} .'.format(reachable),
         '',
     ]
 
@@ -72,6 +96,9 @@ def main():
             results = pickle.load(f)
         print('[TASK3-EVAL] grounding {} episodes from {}'.format(
             len(results), os.path.basename(results_file)))
+        block_reachable = any(
+            float(r) >= SUCCESS_REWARD for r, _info in results)
+        lines += scene_to_triples(block_reachable)
         for i, (total_reward, _info) in enumerate(results):
             outcome = ('SUCCESS' if float(total_reward) >= SUCCESS_REWARD
                        else 'FAILURE')

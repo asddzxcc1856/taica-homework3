@@ -45,37 +45,47 @@ def fk_result_to_triples(case_index, joint_config, eef_pose_7d,
     against the course ground truth, and a PASS/FAIL status. The reasoner
     later derives hw3:PassedFKComputation from the status.
 
-    Produces:
+    Produces (STRUCTURED representation — no JSON-string literals):
         stu:fk_case_0 a hw3:FKComputation ;
             hw3:producedBy "<group id>" ;
             hw3:computedForRobot stu:my_ur5 ;
-            hw3:hasInputJointConfiguration "[...]" ;
-            hw3:hasEndEffectorPose "[...]" ;
+            hw3:hasInputJointConfiguration stu:fk_case_0_q ;   # object node
+            hw3:hasEndEffectorPose stu:fk_case_0_ee ;          # object node
             hw3:hasPoseError "0.00001"^^xsd:double ;
             hw3:hasJacobianError "0.00002"^^xsd:double ;
             hw3:hasEvaluationStatus "PASS" .
+        stu:fk_case_0_q a hw3:JointConfiguration ;             # 6x soma:JointState,
+            hw3:hasJointState stu:fk_case_0_q_js1 , ... .      # each pointing at
+        stu:fk_case_0_q_js1 a soma:JointState ;                # a joint individual
+            hw3:isStateOfJoint stu:my_ur5_joint1 ;
+            qudt:hasUnit unit:RAD ;
+            soma:hasJointPosition "-3.14"^^xsd:double .
+        stu:fk_case_0_ee a soma:6DPose ;                       # pos:Position +
+            hw3:hasPositionComponent ... ;                     # quaternion, QUDT
+            hw3:hasOrientationComponent ... .                  # units (see common.py)
 
     Three conventions your own functions must follow as well:
       1. Instances live in the stu: namespace; classes/properties in hw3:
-      2. Numeric lists are JSON-string literals; float values are
-         "..."^^xsd:double literals
+      2. Numeric values are typed literals on STRUCTURED nodes (built with
+         common.pose_to_ttl / common.joint_config_to_ttl) — never
+         JSON-string literals; units are QUDT IRIs (unit:M / unit:RAD)
       3. Every instance carries hw3:producedBy for provenance queries
     """
-    q_json = json.dumps([round(float(v), 6) for v in joint_config])
-    pose_json = json.dumps([round(float(v), 6) for v in eef_pose_7d])
-    return [
-        'stu:fk_case_{} a hw3:FKComputation ;'.format(case_index),
+    node = 'stu:fk_case_{}'.format(case_index)
+    lines = [
+        '{} a hw3:FKComputation ;'.format(node),
         '    hw3:producedBy "{}" ;'.format(GROUP_ID),
         '    hw3:computedForRobot stu:my_ur5 ;',
-        '    hw3:hasInputJointConfiguration "{}" ;'.format(
-            q_json.replace('"', '\\"')),
-        '    hw3:hasEndEffectorPose "{}" ;'.format(
-            pose_json.replace('"', '\\"')),
+        '    hw3:hasInputJointConfiguration {}_q ;'.format(node),
+        '    hw3:hasEndEffectorPose {}_ee ;'.format(node),
         '    hw3:hasPoseError "{}"^^xsd:double ;'.format(pose_error),
         '    hw3:hasJacobianError "{}"^^xsd:double ;'.format(jacobian_error),
         '    hw3:hasEvaluationStatus "{}" .'.format(eval_status),
         '',
     ]
+    lines += common.joint_config_to_ttl('{}_q'.format(node), joint_config)
+    lines += common.pose_to_ttl('{}_ee'.format(node), eef_pose_7d)
+    return lines
 
 
 # ---------------------------------------------------------------------------

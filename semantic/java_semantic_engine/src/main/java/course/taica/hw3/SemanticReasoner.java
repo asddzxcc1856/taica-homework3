@@ -11,13 +11,21 @@ import org.apache.jena.query.ResultSetRewindable;
 import org.apache.jena.rdf.model.InfModel;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.ModelFactory;
+import org.apache.jena.rdf.model.Resource;
+import org.apache.jena.rdf.model.Statement;
+import org.apache.jena.rdf.model.StmtIterator;
+import org.apache.jena.reasoner.Derivation;
 import org.apache.jena.reasoner.Reasoner;
 import org.apache.jena.reasoner.ReasonerRegistry;
 import org.apache.jena.reasoner.ValidityReport;
 import org.apache.jena.riot.RDFDataMgr;
 import org.apache.jena.riot.RDFFormat;
+import org.apache.jena.vocabulary.RDF;
+import org.apache.jena.vocabulary.ReasonerVocabulary;
 
+import java.io.File;
 import java.io.FileOutputStream;
+import java.io.PrintWriter;
 import java.util.Iterator;
 
 /**
@@ -67,6 +75,9 @@ public final class SemanticReasoner {
         // of Jena). The intersectionOf + hasValue patterns used by the HW3
         // ontology are fully supported.
         Reasoner reasoner = ReasonerRegistry.getOWLReasoner();
+        // Record HOW each fact is derived (rule + premises), so the
+        // derivation traces of the evaluation classes can be exported.
+        reasoner.setParameter(ReasonerVocabulary.PROPderivationLogging, Boolean.TRUE);
         InfModel infModel = ModelFactory.createInfModel(reasoner, data);
 
         ValidityReport validity = infModel.validate();
@@ -93,6 +104,53 @@ public final class SemanticReasoner {
         }
         System.out.println("[EXPORT] inferred graph (" + export.size()
                 + " triples) written to " + outPath);
+
+        // ---- 3b. Export derivation traces of the evaluation classes ----
+        // For every reasoner-derived membership fact, dump WHICH rule fired
+        // and WHICH asserted premises it used — the "proof" of the inference.
+        final String HW3 = "http://taica.course/hw3/ontology#";
+        final String[] evalClasses = {
+            HW3 + "PassedFKComputation",
+            HW3 + "SolvedIKComputation",
+            HW3 + "SuccessfulEpisode",
+        };
+        File derivFile = new File(
+                new File(outPath).getAbsoluteFile().getParentFile(),
+                "derivations.txt");
+        int derived = 0;
+        try (PrintWriter pw = new PrintWriter(derivFile, "UTF-8")) {
+            for (String cls : evalClasses) {
+                Resource c = infModel.getResource(cls);
+                StmtIterator si = infModel.listStatements(null, RDF.type, c);
+                while (si.hasNext()) {
+                    Statement s = si.next();
+                    pw.println("================================================================");
+                    pw.println("DERIVED FACT : " + s.getSubject().getLocalName()
+                            + "  rdf:type  hw3:" + c.getLocalName());
+                    pw.println("----------------------------------------------------------------");
+                    Iterator<Derivation> dit = infModel.getDerivation(s);
+                    int paths = 0;
+                    while (dit.hasNext()) {
+                        Derivation d = dit.next();
+                        if (paths == 0) {
+                            d.printTrace(pw, true);   // first proof chain only
+                        }
+                        paths++;
+                    }
+                    if (paths == 0) {
+                        pw.println("(no forward-rule trace recorded — this fact was"
+                                + " produced by the backward-chaining engine)");
+                    } else if (paths > 1) {
+                        pw.println("(" + (paths - 1)
+                                + " additional equivalent derivation path(s) omitted)");
+                    }
+                    pw.println();
+                    derived++;
+                }
+            }
+        }
+        System.out.println("[DERIVE] " + derived
+                + " derivation traces written to " + derivFile);
 
         // ---- 4. Optional direct SPARQL query (semantic-gate mode) ----
         if (!"-".equals(queryPath)) {
