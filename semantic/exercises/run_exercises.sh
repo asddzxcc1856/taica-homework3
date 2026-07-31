@@ -13,7 +13,8 @@ JENA_HOME="${JENA_HOME:-$PWD/.cache/apache-jena-$JENA_VERSION}"
 for q in exercises/ex1_joint_limit_audit.rq \
          exercises/ex2_trajectory_convergence.rq \
          exercises/ex2b_monotonicity_check.rq \
-         exercises/ex3_cross_robot_comparison.rq; do
+         exercises/ex3_cross_robot_comparison.rq \
+         exercises/ex3b_failure_diagnosis.rq; do
     echo
     echo "==== $(basename "$q") ===="
     "$JENA_HOME/bin/tdb2.tdbquery" --loc store --query "$q"

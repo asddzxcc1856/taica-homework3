@@ -13,7 +13,8 @@ Total 30 points:
          your target_near row                                  2 pts
        - Task 3: at least one hw3:SuccessfulEpisode grounded   2 pts
     S3 SPARQL interoperability (Q3) .............. 10 pts
-       - 6 rows (3 targets x 2 robots) with the correct status matrix
+       - 9 rows (3 targets x 3 robots: yours + TA UR5 + TA UR10)
+         with the correct status matrix
 
 Invoked automatically by STEP 7 of run_task4.sh (requires JENA_HOME).
 """
@@ -29,6 +30,8 @@ STORE = os.path.join(HERE, 'store')
 
 HW3 = 'http://taica.course/hw3/ontology#'
 TA_ROBOT = 'http://taica.course/hw3/data/ta#ta_ur10'
+TA_UR5_ROBOT = 'http://taica.course/hw3/data/ta#ta_ur5'
+TA_ROBOTS = (TA_ROBOT, TA_UR5_ROBOT)
 TA_PROV = 'ta-reference-pipeline'
 
 EXPECTED_DH = {  # jointIndex -> (a, d, alpha)
@@ -49,6 +52,12 @@ EXPECTED_STATUS = {  # statuses your UR5 should report for the shared targets
 EXPECTED_TA_STATUS = {  # statuses in the TA's UR10 graph (fixed values)
     HW3 + 'target_near': 'SOLVED',
     HW3 + 'target_mid': 'SOLVED',
+    HW3 + 'target_far': 'OUT_OF_REACH',
+}
+
+EXPECTED_TA5_STATUS = {  # TA's UR5 graph: same arm as yours -> same statuses
+    HW3 + 'target_near': 'SOLVED',
+    HW3 + 'target_mid': 'OUT_OF_REACH',
     HW3 + 'target_far': 'OUT_OF_REACH',
 }
 
@@ -93,13 +102,13 @@ def main():
     stu_rows = [r for r in q1 if r.get('producedBy') != TA_PROV]
     ta_rows = [r for r in q1 if r.get('producedBy') == TA_PROV]
     if (len(stu_rows) == 1 and stu_rows[0].get('dof') == '6'
-            and stu_rows[0].get('jointCount') == '6' and len(ta_rows) == 1):
+            and stu_rows[0].get('jointCount') == '6' and len(ta_rows) == 2):
         s1 += 2.0
         report.append('[S1] q1 robot summary ................ OK  (+2)')
     else:
         report.append('[S1] q1 robot summary ................ FAIL (+0) '
                       '(expect exactly 1 student robot with dof=6, 6 joints, '
-                      'alongside the TA robot)')
+                      'alongside the two TA robots UR5 + UR10)')
 
     dh_rows = tdbquery(
         'PREFIX hw3: <{ns}>\n'
@@ -163,7 +172,7 @@ def main():
     q2 = read_csv('q2_reachable_targets.csv')
     stu_solved = [r for r in q2
                   if r.get('target') == HW3 + 'target_near'
-                  and TA_ROBOT not in r.get('robot', '')]
+                  and r.get('robot') not in TA_ROBOTS]
     if stu_solved:
         s2 += 2.0
         report.append('[S2] q2 inferred SolvedIKComputation . OK  (+2)')
@@ -195,21 +204,23 @@ def main():
     expected_rows = set()
     for t, s in EXPECTED_TA_STATUS.items():
         expected_rows.add((t, TA_ROBOT, s))
+    for t, s in EXPECTED_TA5_STATUS.items():
+        expected_rows.add((t, TA_UR5_ROBOT, s))
     stu_robots = {r['robot'] for r in q3 if r.get('robot')
-                  and r['robot'] != TA_ROBOT}
+                  and r['robot'] not in TA_ROBOTS}
     stu_robot = next(iter(stu_robots)) if len(stu_robots) == 1 else None
     for t, s in EXPECTED_STATUS.items():
         expected_rows.add((t, stu_robot, s))
     got_rows = {(r.get('target'), r.get('robot'), r.get('status'))
                 for r in q3}
-    if stu_robot and got_rows == expected_rows and len(q3) == 6:
+    if stu_robot and got_rows == expected_rows and len(q3) == 9:
         s3 = 10.0
         report.append('[S3] q3 interop comparison matrix .... OK  (+10)')
     else:
         matched = len(got_rows & expected_rows) if stu_robot else 0
-        s3 = round(10.0 * matched / 6.0, 1)
+        s3 = round(10.0 * matched / 9.0, 1)
         report.append('[S3] q3 interop comparison matrix .... {} (+{}) '
-                      '({} / 6 expected rows)'.format(
+                      '({} / 9 expected rows)'.format(
                           'PARTIAL' if matched else 'FAIL', s3, matched))
     total += s3
 

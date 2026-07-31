@@ -8,6 +8,9 @@ Semantic Decision Making**。
 先決條件:已跑完 `bash semantic/run_task4.sh`(建好 `semantic/store/`)。
 執行方式:完成 `ex*.rq` 後 `bash semantic/exercises/run_exercises.sh`。
 
+**報告怎麼寫**:每題的結論範圍(必寫/加分/不要寫)與 GT 範例答案
+在 [REPORT_GUIDE.md](REPORT_GUIDE.md)——動筆前先讀。
+
 四個練習構成漸進式 Semantic Robot Learning Path:
 
 ```text
@@ -20,7 +23,7 @@ Data Validation → Process          → Knowledge          → Autonomous
 |---|---|---|
 | 1 · Joint Limit Audit | Robot State Validation | SPARQL FILTER |
 | 2 · Trajectory Convergence | Algorithm Process Understanding | RDF Sequence + Aggregation |
-| 3 · Cross Robot Comparison | Interoperability | Shared Ontology + JOIN |
+| 3 · Cross Robot Comparison | Interoperability + Failure Diagnosis | Shared Ontology + JOIN + 對照組推論 |
 | 4 · Semantic Gate(加分) | Decision Reasoning | OWL EquivalentClass |
 
 ---
@@ -96,34 +99,47 @@ Bonus(`ex2b_monotonicity_check.rq`):沿 `dul:directlyPrecedes` 找出
 
 ## Exercise 3 · Cross Robot Capability Comparison
 
-**目的**:利用共享 ontology 比較不同 Robot 的能力。
+**目的**:利用共享 ontology 比較不同 Robot 的能力,並**推論失敗原因**。
 
-共用 target `hw3:target_mid` 是 join key:
+store 裡有**三台**機器人,構成一組對照實驗:
 
 ```text
-              target_mid
-             /          \
-           UR5          UR10
-       OUT_OF_REACH    SOLVED
+                 你的 UR5          ta:ta_ur5          ta:ta_ur10
+  手臂 (物理)      UR5                UR5                UR10
+  演算法          你的 solver        TA 參考 solver      TA 參考 solver
 ```
 
-**任務**:撰寫 SPARQL(`ex3_cross_robot_comparison.rq`)列出
-Robot / Target / IK Status,並回答分析問題:
+- 你的 UR5 vs ta_ur5:**同臂異解** → 狀態不一致 = 演算法問題
+- ta_ur5 vs ta_ur10:**同解異臂** → 狀態不一致 = 手臂物理限制
 
-> 為什麼 same target + different robot = different result?
+**任務 1**(`ex3_cross_robot_comparison.rq`):列出 Robot / Target /
+IK Status 矩陣(3 targets × 3 robots = 9 列),並從圖中的 DH 參數找證據
+(提示:對每台 robot 彙總 `SUM(ABS(?dh_a))` 近似臂長)。
 
-從圖中的 DH 參數找證據(提示:對每台 robot 彙總 `SUM(ABS(?dh_a))`
-近似臂長),可能原因:link length、DH parameter、workspace boundary。
+**任務 2**(`ex3b_failure_diagnosis.rq`):對每個 target 產生一列診斷,
+用巢狀 IF 實作歸因邏輯:
 
-**預期結果**:
+| 條件 | 診斷 |
+|---|---|
+| 你的狀態 ≠ ta_ur5 狀態 | **ALGORITHM ISSUE**(同臂、參考解不同) |
+| 你的狀態 = SOLVED | OK(兩條 UR5 pipeline 都解得出) |
+| ta_ur10 = SOLVED | **PHYSICAL LIMIT of UR5**(長臂解得出) |
+| 其餘 | BEYOND BOTH ARMS(兩台都超出工作空間) |
 
-| Robot | Target | Status |
-|---|---|---|
-| UR5 | target_mid | OUT_OF_REACH |
-| UR10 | target_mid | SOLVED |
+**預期結果**(你的 IK 正確時):
 
-**學習重點**:Ontology 提供跨 Robot interoperability,使不同來源資料
-可以直接比較。
+| Target | 你的 UR5 | ta_ur5 | ta_ur10 | 診斷 |
+|---|---|---|---|---|
+| near | SOLVED | SOLVED | SOLVED | OK |
+| mid | OUT_OF_REACH | OUT_OF_REACH | SOLVED | **PHYSICAL LIMIT of UR5** |
+| far | OUT_OF_REACH | OUT_OF_REACH | OUT_OF_REACH | BEYOND BOTH ARMS |
+
+若你的 IK 有 bug(例如 near 解不出),mid/far 的診斷不變,但 near 那列
+會變成 **ALGORITHM ISSUE**——語意層直接把「該修演算法還是該換手臂」
+區分出來。
+
+**學習重點**:Ontology 提供跨 Robot interoperability;而**對照組設計**
+(同臂異解/同解異臂)讓失敗歸因變成一條可推理的查詢。
 
 ---
 

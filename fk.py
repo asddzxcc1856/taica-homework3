@@ -1,4 +1,4 @@
-import os, argparse, json
+import os, argparse, json, time
 import numpy as np
 
 from scipy.spatial.transform import Rotation as R
@@ -118,6 +118,17 @@ def score_fk(robot, testcase_files : str, visualize : bool=False):
             gt_pose = poses[i]
 
             if visualize :
+                # 視覺增強: 把手臂擺到這筆測資的關節角, 讓紅/綠座標軸出現在手掌上。
+                # reset + 馬達目標 + 少量 step 才會讓 GUI 同步畫面 (同 Task 2 的模式);
+                # 這只影響顯示 — your_fk 的計算與評分完全不經過 pybullet。
+                joint_ids = list(robot._joint_name_to_ids.values())
+                for jid, qi in zip(joint_ids, joint_poses[i]):
+                    p.resetJointState(robot.robot_id, jid, qi)
+                    p.setJointMotorControl2(robot.robot_id, jid, p.POSITION_CONTROL,
+                                            targetPosition=qi)
+                for _ in range(5):
+                    p.stepSimulation()
+                time.sleep(0.05)
                 color_yours = [[1,0,0], [1,0,0], [1,0,0]]
                 color_gt = [[0,1,0], [0,1,0], [0,1,0]]
                 draw_coordinate(your_pose, size=0.01, color=color_yours)

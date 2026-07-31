@@ -143,7 +143,7 @@ TA's UR10 graph (provided)    ta-robot-graph.ttl        ─┘   Task 3 -> hw3:S
 - Section 3b provides the **semantic-gate vocabulary** (`GraspableObject`, `isKinematicallyReachable`, and the `ExecutableGraspTarget` class declaration) used by Task 3's scene grounding; the gate's **reasoning rule is your work** in Exercise 4 (bonus)
 - Section 4 defines one **inference-defined evaluation class per task** (`PassedFKComputation`, `SolvedIKComputation`, `SuccessfulEpisode`): no program ever asserts them directly; the OWL reasoner derives membership from the grounded statuses
 
-Then open [semantic/ontology/ta-robot-graph.ttl](semantic/ontology/ta-robot-graph.ttl) (do not modify): results the TA published for the same targets, using a different arm (UR10) and a different IK program.
+Then open [semantic/ontology/ta-robot-graph.ttl](semantic/ontology/ta-robot-graph.ttl) (do not modify): results the TA published for the same targets with **two reference robots** — a **UR5** (the same arm as yours, driven by the TA's reference solver) and a **UR10** (same solver, longer arm). Together with your UR5 they form a controlled experiment: *same arm, different algorithm* vs *same algorithm, different arm* — which is what lets Exercise 3b attribute a failure to the ALGORITHM or to the arm's PHYSICAL limit.
 
 **Step 4-2. Implement the grounding (2 functions across 2 files).**
 
@@ -157,7 +157,7 @@ Design rule — **ground what downstream consumers need**: every graph below fee
 
 Notes: float literals must be written as `"..."^^xsd:double`; `solvesForTarget` must point to the shared target URI in the `hw3:` namespace (if you write it in `stu:`, the cross-graph join in Q3 will not find your results).
 
-**Step 4-3. Complete the interoperability query.** Open [semantic/queries/q3_interop_compare.rq](semantic/queries/q3_interop_compare.rq) and complete the SPARQL query following the hints: for every shared target, list **each robot's IK status** (3 targets × 2 robots = 6 rows; the same query automatically scales to N robots when more groups' graphs are loaded). q1, q2, and q4 are provided — read them before writing q3.
+**Step 4-3. Complete the interoperability query.** Open [semantic/queries/q3_interop_compare.rq](semantic/queries/q3_interop_compare.rq) and complete the SPARQL query following the hints: for every shared target, list **each robot's IK status** (3 targets × 3 robots = 9 rows: your UR5 + the TA's UR5 + the TA's UR10; the same query automatically scales to N robots when more groups' graphs are loaded). q1, q2, and q4 are provided — read them before writing q3.
 
 **Step 4-4. Run and score with one command.**
 
@@ -188,7 +188,7 @@ Expected output at the end (q4 is the semantic evaluation report of all three ta
   Your Task 4 Score : 30.0 / 30.0
 ```
 
-The correct Q3 result showcases the point of interoperability: `target_mid` is `OUT_OF_REACH` for your UR5 but `SOLVED` for the TA's UR10 — two pipelines that have never seen each other's code can answer "which target can only the UR10 reach?" through the shared vocabulary alone.
+The correct Q3 result showcases the point of interoperability: `target_mid` is `OUT_OF_REACH` for both UR5s but `SOLVED` for the TA's UR10 — three pipelines that have never seen each other's code can answer "which target can only the longer arm reach?" through the shared vocabulary alone, and the UR5/UR5 agreement is what proves the failure is physical, not algorithmic.
 
 **Step 4-5. Advanced Semantic Reasoning Exercises ([semantic/exercises/](semantic/exercises/README.md)).**
 
@@ -204,10 +204,42 @@ Joint Limit Audit  →  Trajectory Convergence → Cross-Robot Comparison → Se
 |---|---|---|
 | 1 · Joint Limit Audit | `ex1_joint_limit_audit.rq` — join each `soma:JointState` with its joint's limits, FILTER violations | the semantic layer can AUDIT execution results against the robot model |
 | 2 · Trajectory Convergence | `ex2_trajectory_convergence.rq` (+ bonus `ex2b`) — first/last residual, iteration counts, `dul:directlyPrecedes` ordering | semantic representation preserves the ALGORITHM PROCESS, not just results |
-| 3 · Cross-Robot Comparison | `ex3_cross_robot_comparison.rq` — status per robot per shared target + arm-length evidence from D-H | shared ontology = interoperability: same query, any number of robots |
+| 3 · Cross-Robot Comparison | `ex3_cross_robot_comparison.rq` (matrix + arm-length evidence) and `ex3b_failure_diagnosis.rq` (nested-IF attribution across your UR5 / TA UR5 / TA UR10) | interoperability, plus controlled-experiment reasoning: ALGORITHM issue vs PHYSICAL limit |
 | 4 · Semantic Gate **(bonus)** | `ex4-semantic-gate.ttl` — define the gate's reasoning rule yourself: `hw3:ExecutableGraspTarget ≡ GraspableObject ⊓ (isKinematicallyReachable value true)` | OWL equivalent-class reasoning drives ALLOW/REFUSE robot decisions with explainable verdicts |
 
-Run `bash semantic/exercises/run_exercises.sh` for Ex1–Ex3 (against your triple store) and `python semantic/exercises/ex4_semantic_gate.py` for Ex4. Expected Ex4 verdicts: Object A (graspable, reachable) ALLOW; Object B (fixture — not graspable) REFUSE, *semantic exclusion*; Object C (out of reach) REFUSE, *geometric exclusion*. Members of `ExecutableGraspTarget` are never asserted — your rule derives them. Full specs and hints are in [semantic/exercises/README.md](semantic/exercises/README.md).
+**How the reasoning works in each exercise** (read this before writing queries):
+
+*Ex1 — graph join + value-level audit.* The reasoning is a JOIN across two independently grounded worlds: the robot **model** (Task 1: joints with limits) and the execution **results** (Task 2: JointStates). The link is `hw3:isStateOfJoint`:
+
+```
+?ik  a hw3:IKComputation ; hw3:hasJointConfiguration ?cfg .
+?cfg hw3:hasJointState ?js .
+?js  hw3:isStateOfJoint ?joint ; soma:hasJointPosition ?angle .   # result → model
+?joint hw3:hasJointLowerLimit ?lower ; hw3:hasJointUpperLimit ?upper .
+FILTER(?angle < ?lower || ?angle > ?upper)                        # the audit itself
+```
+
+The comparison is deliberately a SPARQL `FILTER`, **not** OWL — OWL cannot compare numbers (that is the course's layering principle). Interpretation: all rows OK = the solver respects the model; a value exactly ON a limit is evidence the solver's clipping engaged (look at `target_far`'s joint1/joint2).
+
+*Ex2 — reasoning over a process representation.* A trajectory is a linked list in the graph: samples carry `hasSampleIndex` (random access) and are chained by `dul:directlyPrecedes` (adjacency). Three inferences: (a) **convergence** — join the index-0 sample with the index-MAX sample (aggregate subquery `GROUP BY ?traj`) and compare residuals; (b) **speed** — `ORDER BY ?iters` on `hasTotalIterationCount`: SOLVED targets converge in few iterations, OUT_OF_REACH ones exhaust `max_iters`; (c) **oscillation** (ex2b) — self-join adjacent pairs `?s dul:directlyPrecedes ?sNext` and `FILTER(?rNext > ?r)`: a residual that rises near a workspace boundary is the DLS solver pushing against an unreachable target. Conclusion to draw: the graph preserved the *algorithm's process*, so process questions become queries.
+
+*Ex3 — interoperability + failure-diagnosis reasoning.* Four mechanisms compose: (a) **shared URIs as join keys** — all graphs assert results against the same `hw3:target_*` individuals, so the cross-robot join needs no schema mapping; (b) **class-level generalization** — all arms are `cora:Robot`, so one pattern covers N robots automatically; (c) **evidence aggregation** — `(SUM(ABS(?a)) AS ?armLength)` over each robot's `hw3:dh_a` derives a capability estimate *from the spec, inside the query* (≈0.82 m vs ≈1.18 m); (d) **controlled-experiment attribution** (ex3b) — with three robots the failure cause becomes derivable: your UR5 vs `ta:ta_ur5` is *same arm, different algorithm* (a status mismatch ⇒ ALGORITHM ISSUE), `ta:ta_ur5` vs `ta:ta_ur10` is *same algorithm, different arm* (a mismatch ⇒ PHYSICAL LIMIT). Expected diagnoses: near = OK, mid = PHYSICAL LIMIT of UR5, far = BEYOND BOTH ARMS — and if your solver were buggy, only the near row would flip to ALGORITHM ISSUE.
+
+*Ex4 — OWL equivalent-class derivation (the only exercise where OWL itself reasons).* Given your axiom and the scene facts, Jena's rule reasoner derives membership in four steps (visible in the exported derivation traces):
+
+```
+1. Facts:   ex:objectA a hw3:GraspableObject .
+            ex:objectA hw3:isKinematicallyReachable true .
+2. hasValue recognition: anything with isKinematicallyReachable=true
+            → rdf:type of the (anonymous) Restriction class
+3. intersectionRecognition: member of ALL operands
+            → rdf:type of the intersection class
+4. equivalentClass: → ex:objectA a hw3:ExecutableGraspTarget      # ALLOW
+```
+
+REFUSE verdicts are explained by the missing premise: objectB never enters step 3 (no `GraspableObject` type — semantic exclusion); objectC fails step 2 (`reachable false` — geometric exclusion). Note the division of labour: the boolean `isKinematicallyReachable` was produced by the *numeric* layer; OWL only does the *concept* classification — and every verdict has a replayable reasoning chain.
+
+**What to write in the report**: the per-exercise conclusion scope (required / bonus / out-of-bounds claims) and a ground-truth model answer for each exercise are in [semantic/exercises/REPORT_GUIDE.md](semantic/exercises/REPORT_GUIDE.md) — read it before writing. Run `bash semantic/exercises/run_exercises.sh` for Ex1–Ex3 (against your triple store) and `python semantic/exercises/ex4_semantic_gate.py` for Ex4. Expected Ex4 verdicts: Object A (graspable, reachable) ALLOW; Object B (fixture — not graspable) REFUSE, *semantic exclusion*; Object C (out of reach) REFUSE, *geometric exclusion*. Members of `ExecutableGraspTarget` are never asserted — your rule derives them. Full specs and hints are in [semantic/exercises/README.md](semantic/exercises/README.md).
 
 **Task 4 FAQ**
 - `python` is not the taica-hw3 environment → `PYTHON=~/miniconda3/envs/taica-hw3/bin/python bash semantic/run_task4.sh`
