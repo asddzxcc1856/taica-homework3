@@ -1,232 +1,158 @@
 # -*- coding: utf-8 -*-
 """Task 4 scoring script (TA-provided; grading uses the same code).
 
-Total 30 points:
-    S1 Robot specification grounding ............. 8 pts
-       - q1 finds your robot (hw3:hasDoF 6, 6 joints)          2 pts
-       - all 6 joints' D-H parameters match the course table
-         (tolerance 1e-3)                                      6 pts
-    S2 Per-task evaluation grounding ............. 12 pts
-       - Task 1: 3 FK cases grounded, all PASS                 4 pts
-       - Task 2: IK statuses of the 3 shared targets correct   4 pts
-       - Task 2: q2 (inferred SolvedIKComputation) contains
-         your target_near row                                  2 pts
-       - Task 3: at least one hw3:SuccessfulEpisode grounded   2 pts
-    S3 SPARQL interoperability (Q3) .............. 10 pts
-       - 9 rows (3 targets x 3 robots: yours + TA UR5 + TA UR10)
-         with the correct status matrix
+Total 30 points — grounding + reasoning + SHACL:
 
-Invoked automatically by STEP 7 of run_task4.sh (requires JENA_HOME).
+    S1 REUSE grounding structure ............... 10 pts
+       ta-shapes-full.ttl 的 STRUCTURE:* shapes 對 output/data.ttl
+       零違規 -> 滿分 (每個違規 -2)
+    S2 REASONING (inference-defined classes) ... 6 pts
+       output/inferred.ttl 中由推理導出的成員必須是:
+       - hw3:SolvedIKComputation    = {ik_target_near}          (+3)
+       - hw3:OutOfReachIKComputation = {ik_target_mid, _far}    (+3)
+    S3 Problem detection on YOUR data .......... 6 pts
+       TA problem shapes 在你的 data.ttl 上:
+       - target_mid / target_far 被標 ARM_OUT_OF_RANGE (各 +2)
+       - target_near 沒有任何問題旗標 (+1)
+       - 零 JOINT_LIMIT_VIOLATION (+1)
+    S4 YOUR shapes.ttl vs TA faulty trace ...... 8 pts
+       用「你的」shapes.ttl 驗證助教給的有問題執行過程
+       (ta-faulty-execution.ttl):
+       - probe:ik_good 零違規 (+2)
+       - probe:ik_out_of_range 被標 ARM_OUT_OF_RANGE (+2)
+       - probe:ik_no_convergence 被標 NO_CONVERGENCE (+2)
+       - probe:fk_bad 被標 FK_INACCURATE (+2)
+
+Invoked automatically by STEP 6 of run_task4.sh.
 """
 
-import csv
 import os
-import subprocess
+import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUTPUT = os.path.join(HERE, 'output')
-STORE = os.path.join(HERE, 'store')
 
-HW3 = 'http://taica.course/hw3/ontology#'
-TA_ROBOT = 'http://taica.course/hw3/data/ta#ta_ur10'
-TA_UR5_ROBOT = 'http://taica.course/hw3/data/ta#ta_ur5'
-TA_ROBOTS = (TA_ROBOT, TA_UR5_ROBOT)
-TA_PROV = 'ta-reference-pipeline'
-
-EXPECTED_DH = {  # jointIndex -> (a, d, alpha)
-    1: (0.0, 0.0892, 1.570796),
-    2: (-0.425, 0.0, 0.0),
-    3: (-0.392, 0.0, 0.0),
-    4: (0.0, 0.1093, 1.570796),
-    5: (0.0, 0.09475, -1.570796),
-    6: (0.0, 0.2023, 0.0),
-}
-
-EXPECTED_STATUS = {  # statuses your UR5 should report for the shared targets
-    HW3 + 'target_near': 'SOLVED',
-    HW3 + 'target_mid': 'OUT_OF_REACH',
-    HW3 + 'target_far': 'OUT_OF_REACH',
-}
-
-EXPECTED_TA_STATUS = {  # statuses in the TA's UR10 graph (fixed values)
-    HW3 + 'target_near': 'SOLVED',
-    HW3 + 'target_mid': 'SOLVED',
-    HW3 + 'target_far': 'OUT_OF_REACH',
-}
-
-EXPECTED_TA5_STATUS = {  # TA's UR5 graph: same arm as yours -> same statuses
-    HW3 + 'target_near': 'SOLVED',
-    HW3 + 'target_mid': 'OUT_OF_REACH',
-    HW3 + 'target_far': 'OUT_OF_REACH',
-}
-
-EXPECTED_FK_CASES = 3
+RESULT_SPLIT = re.compile(r'(?:\ba|rdf:type)\s+sh:ValidationResult')
 
 
-def read_csv(name):
+def parse_report(name):
+    """Parse a SHACL validation report (Turtle) into [(focus, message)]."""
     path = os.path.join(OUTPUT, name)
     if not os.path.exists(path):
-        return []
-    with open(path, 'r') as f:
-        return list(csv.DictReader(f))
+        return None
+    with open(path) as f:
+        txt = f.read()
+    results = []
+    for chunk in RESULT_SPLIT.split(txt)[1:]:
+        focus = re.search(r'sh:focusNode\s+([^\s;]+)', chunk)
+        msg = re.search(r'sh:resultMessage\s+"([^"]*)"', chunk)
+        results.append((focus.group(1) if focus else '',
+                        msg.group(1) if msg else ''))
+    return results
 
 
-def tdbquery(query_text):
-    """Run an ad-hoc grading query against the triple store; return CSV rows."""
-    jena_home = os.environ.get('JENA_HOME', '')
-    tool = os.path.join(jena_home, 'bin', 'tdb2.tdbquery')
-    qfile = os.path.join(OUTPUT, '_grading_tmp.rq')
-    with open(qfile, 'w') as f:
-        f.write(query_text)
-    out = subprocess.check_output(
-        [tool, '--loc', STORE, '--query', qfile, '--results=CSV'],
-        universal_newlines=True)
-    return list(csv.DictReader(out.splitlines()))
+def flagged(results, focus_key, msg_prefix=None):
+    for focus, msg in results:
+        if focus_key in focus and (msg_prefix is None
+                                   or msg.startswith(msg_prefix)):
+            return True
+    return False
 
 
-def close(a, b, tol=1e-3):
-    try:
-        return abs(float(a) - float(b)) <= tol
-    except (TypeError, ValueError):
-        return False
+def inferred_types(subject_key):
+    """Return the Turtle paragraph of `subject_key` in output/inferred.ttl
+    (Jena TURTLE_PRETTY writes one subject block followed by a blank line)."""
+    path = os.path.join(OUTPUT, 'inferred.ttl')
+    if not os.path.exists(path):
+        return ''
+    with open(path) as f:
+        txt = f.read()
+    m = re.search(r'^\S*' + re.escape(subject_key) + r'\b.*?\n\n',
+                  txt, re.S | re.M)
+    return m.group(0) if m else ''
 
 
 def main():
     total = 0.0
     report = []
 
-    # ---------------- S1: robot spec grounding (8) ----------------
-    s1 = 0.0
-    q1 = read_csv('q1_robot_specs.csv')
-    stu_rows = [r for r in q1 if r.get('producedBy') != TA_PROV]
-    ta_rows = [r for r in q1 if r.get('producedBy') == TA_PROV]
-    if (len(stu_rows) == 1 and stu_rows[0].get('dof') == '6'
-            and stu_rows[0].get('jointCount') == '6' and len(ta_rows) == 2):
-        s1 += 2.0
-        report.append('[S1] q1 robot summary ................ OK  (+2)')
+    # ---------------- S1: grounding structure (10) ----------------
+    ta = parse_report('ta-validation.ttl')
+    if ta is None:
+        report.append('[S1] ta-validation.ttl missing ........ FAIL (+0)')
+        ta = []
     else:
-        report.append('[S1] q1 robot summary ................ FAIL (+0) '
-                      '(expect exactly 1 student robot with dof=6, 6 joints, '
-                      'alongside the two TA robots UR5 + UR10)')
+        structural = [(f, m) for f, m in ta if m.startswith('STRUCTURE')]
+        s1 = max(0.0, 10.0 - 2.0 * len(structural))
+        total += s1
+        if structural:
+            report.append('[S1] grounding structure .............. PARTIAL (+{:g}) '
+                          '({} STRUCTURE violation(s))'.format(s1, len(structural)))
+            for f, m in structural[:5]:
+                report.append('       - {} : {}'.format(f, m[:60]))
+        else:
+            report.append('[S1] grounding structure (0 violations) OK  (+10)')
 
-    dh_rows = tdbquery(
-        'PREFIX hw3: <{ns}>\n'
-        'PREFIX cora: <http://purl.org/ieee1872-owl/cora-bare#>\n'
-        'SELECT ?idx ?a ?d ?alpha WHERE {{\n'
-        '  ?r a cora:Robot ; hw3:producedBy ?pb ; hw3:hasJoint ?j .\n'
-        '  ?j hw3:jointIndex ?idx ; hw3:dh_a ?a ; hw3:dh_d ?d ;\n'
-        '     hw3:dh_alpha ?alpha .\n'
-        '  FILTER(?pb != "{ta}")\n'
-        '}} ORDER BY ?idx\n'.format(ns=HW3, ta=TA_PROV))
-    dh_ok = 0
-    for row in dh_rows:
-        try:
-            idx = int(float(row['idx']))
-        except (TypeError, ValueError):
-            continue
-        exp = EXPECTED_DH.get(idx)
-        if exp and close(row['a'], exp[0]) and close(row['d'], exp[1]) \
-                and close(row['alpha'], exp[2]):
-            dh_ok += 1
-    s1 += min(6.0, dh_ok)
-    report.append('[S1] DH parameters ({} / 6 joints) ..... {} (+{})'.format(
-        dh_ok, 'OK' if dh_ok == 6 else 'PARTIAL', min(6, dh_ok)))
-    total += s1
+    # ---------------- S2: reasoning-derived classes (6) ----------------
+    near = inferred_types('ik_target_near')
+    mid = inferred_types('ik_target_mid')
+    far = inferred_types('ik_target_far')
+    ok = ('SolvedIKComputation' in near
+          and 'SolvedIKComputation' not in mid
+          and 'SolvedIKComputation' not in far)
+    total += 3 if ok else 0
+    report.append('[S2] inferred SolvedIKComputation = {{near}} .. {} (+{})'.format(
+        'OK ' if ok else 'FAIL', 3 if ok else 0))
+    ok = ('OutOfReachIKComputation' in mid
+          and 'OutOfReachIKComputation' in far
+          and 'OutOfReachIKComputation' not in near)
+    total += 3 if ok else 0
+    report.append('[S2] inferred OutOfReach = {{mid, far}} ...... {} (+{})'.format(
+        'OK ' if ok else 'FAIL', 3 if ok else 0))
 
-    # ---------------- S2: per-task evaluation grounding (12) ----------------
-    s2 = 0.0
+    # ---------------- S3: problem detection on YOUR data (6) ----------------
+    checks = [
+        (flagged(ta, 'ik_target_mid', 'ARM_OUT_OF_RANGE'), 2,
+         'target_mid flagged ARM_OUT_OF_RANGE'),
+        (flagged(ta, 'ik_target_far', 'ARM_OUT_OF_RANGE'), 2,
+         'target_far flagged ARM_OUT_OF_RANGE'),
+        (not any('ik_target_near' in f and not m.startswith('STRUCTURE')
+                 for f, m in ta), 1,
+         'target_near clean (no problem flags)'),
+        (not any(m.startswith('JOINT_LIMIT_VIOLATION') for _, m in ta), 1,
+         'no JOINT_LIMIT_VIOLATION'),
+    ]
+    for ok, pts, label in checks:
+        total += pts if ok else 0
+        report.append('[S3] {} {} (+{})'.format(
+            (label + ' ').ljust(40, '.'), 'OK ' if ok else 'FAIL',
+            pts if ok else 0))
 
-    # Task 1: FK evaluation cases (expect 3, all PASS)
-    fk_rows = tdbquery(
-        'PREFIX hw3: <{ns}>\n'
-        'SELECT ?c ?status WHERE {{\n'
-        '  ?c a hw3:FKComputation ; hw3:producedBy ?pb ;\n'
-        '     hw3:hasEvaluationStatus ?status .\n'
-        '  FILTER(?pb != "{ta}")\n'
-        '}}\n'.format(ns=HW3, ta=TA_PROV))
-    fk_pass = sum(1 for r in fk_rows if r.get('status') == 'PASS')
-    fk_pts = round(4.0 * min(fk_pass, EXPECTED_FK_CASES) / EXPECTED_FK_CASES, 1)
-    s2 += fk_pts
-    report.append('[S2] Task 1 FK evaluation ({}/{} PASS) . {} (+{})'.format(
-        fk_pass, EXPECTED_FK_CASES,
-        'OK ' if fk_pass >= EXPECTED_FK_CASES else 'PARTIAL', fk_pts))
-
-    # Task 2: IK statuses on the shared targets
-    ik_rows = tdbquery(
-        'PREFIX hw3: <{ns}>\n'
-        'SELECT ?target ?status WHERE {{\n'
-        '  ?ik a hw3:IKComputation ; hw3:producedBy ?pb ;\n'
-        '      hw3:solvesForTarget ?target ; hw3:hasIKStatus ?status .\n'
-        '  FILTER(?pb != "{ta}")\n'
-        '}}\n'.format(ns=HW3, ta=TA_PROV))
-    got_status = {r['target']: r['status'] for r in ik_rows}
-    ik_ok = sum(1 for t, s in EXPECTED_STATUS.items()
-                if got_status.get(t) == s)
-    ik_pts = round(4.0 * ik_ok / 3.0, 1)
-    s2 += ik_pts
-    report.append('[S2] Task 2 IK statuses ({}/3) ......... {} (+{})'.format(
-        ik_ok, 'OK ' if ik_ok == 3 else 'PARTIAL', ik_pts))
-
-    # Task 2: inference check via q2
-    q2 = read_csv('q2_reachable_targets.csv')
-    stu_solved = [r for r in q2
-                  if r.get('target') == HW3 + 'target_near'
-                  and r.get('robot') not in TA_ROBOTS]
-    if stu_solved:
-        s2 += 2.0
-        report.append('[S2] q2 inferred SolvedIKComputation . OK  (+2)')
-    else:
-        report.append('[S2] q2 inferred SolvedIKComputation . FAIL (+0) '
-                      '(your target_near row is missing — check hasIKStatus '
-                      'literal and that reasoning ran)')
-
-    # Task 3: successful insertion episodes grounded
-    ep_rows = tdbquery(
-        'PREFIX hw3: <{ns}>\n'
-        'SELECT ?e WHERE {{\n'
-        '  ?e a hw3:SuccessfulEpisode ; hw3:producedBy ?pb .\n'
-        '  FILTER(?pb != "{ta}")\n'
-        '}}\n'.format(ns=HW3, ta=TA_PROV))
-    if ep_rows:
-        s2 += 2.0
-        report.append('[S2] Task 3 episodes ({} SUCCESS) ..... OK  (+2)'.format(
-            len(ep_rows)))
-    else:
-        report.append('[S2] Task 3 episodes ................. FAIL (+0) '
-                      '(run Task 3 first so ravens/test.py writes the '
-                      'results pkl, then re-run this pipeline)')
-    total += s2
-
-    # ---------------- S3: interoperability query (10) ----------------
-    s3 = 0.0
-    q3 = read_csv('q3_interop_compare.csv')
-    expected_rows = set()
-    for t, s in EXPECTED_TA_STATUS.items():
-        expected_rows.add((t, TA_ROBOT, s))
-    for t, s in EXPECTED_TA5_STATUS.items():
-        expected_rows.add((t, TA_UR5_ROBOT, s))
-    stu_robots = {r['robot'] for r in q3 if r.get('robot')
-                  and r['robot'] not in TA_ROBOTS}
-    stu_robot = next(iter(stu_robots)) if len(stu_robots) == 1 else None
-    for t, s in EXPECTED_STATUS.items():
-        expected_rows.add((t, stu_robot, s))
-    got_rows = {(r.get('target'), r.get('robot'), r.get('status'))
-                for r in q3}
-    if stu_robot and got_rows == expected_rows and len(q3) == 9:
-        s3 = 10.0
-        report.append('[S3] q3 interop comparison matrix .... OK  (+10)')
-    else:
-        matched = len(got_rows & expected_rows) if stu_robot else 0
-        s3 = round(10.0 * matched / 9.0, 1)
-        report.append('[S3] q3 interop comparison matrix .... {} (+{}) '
-                      '({} / 9 expected rows)'.format(
-                          'PARTIAL' if matched else 'FAIL', s3, matched))
-    total += s3
+    # ---------------- S4: your shapes vs TA faulty trace (8) ----------------
+    probe = parse_report('probe-validation.ttl')
+    if probe is None:
+        report.append('[S4] probe-validation.ttl missing ...... FAIL (+0)')
+        probe = []
+    checks = [
+        (not any('ik_good' in f for f, _ in probe), 2,
+         'faulty trace: good case clean'),
+        (flagged(probe, 'ik_out_of_range', 'ARM_OUT_OF_RANGE'), 2,
+         'faulty trace: out-of-range flagged'),
+        (flagged(probe, 'ik_no_convergence', 'NO_CONVERGENCE'), 2,
+         'faulty trace: no-convergence flagged'),
+        (flagged(probe, 'fk_bad', 'FK_INACCURATE'), 2,
+         'faulty trace: bad FK flagged'),
+    ]
+    for ok, pts, label in checks:
+        total += pts if ok else 0
+        report.append('[S4] {} {} (+{})'.format(
+            (label + ' ').ljust(40, '.'), 'OK ' if ok else 'FAIL',
+            pts if ok else 0))
 
     # ---------------- summary ----------------
     print('=' * 70)
-    print('  Task 4 : Semantic Robot Knowledge and Triple Store')
+    print('  Task 4 : Grounding (REUSE) + Reasoning + SHACL Validation')
     print('=' * 70)
     for line in report:
         print('  ' + line)

@@ -1,0 +1,30 @@
+@prefix hw3:   <http://taica.course/hw3/ontology#> .
+@prefix probe: <http://taica.course/hw3/data/probe#> .
+@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
+
+# =============================================================================
+# TA-provided FAULTY IK/FK execution trace (grading; do not modify)
+#
+# 助教給的一段「有問題」的執行過程資料 —— 你的 shapes.ttl 必須能驗出其中的
+# 問題狀態:
+#   probe:fk_bad            — FK pose 誤差 0.031 m -> FK_INACCURATE
+#   probe:ik_good           — 一切正常            -> 不得回報任何違規
+#   probe:ik_out_of_range   — 目標距離 1.42 m     -> ARM_OUT_OF_RANGE
+#   probe:ik_no_convergence — 殘差 0.15 m         -> NO_CONVERGENCE
+# =============================================================================
+
+probe:fk_bad a hw3:FKComputation ;
+    hw3:hasPoseError "0.031"^^xsd:double ;
+    hw3:hasJacobianError "0.12"^^xsd:double .
+
+probe:ik_good a hw3:IKComputation ;
+    hw3:hasTargetDistance "0.55"^^xsd:double ;
+    hw3:hasResidual "0.0008"^^xsd:double .
+
+probe:ik_out_of_range a hw3:IKComputation ;
+    hw3:hasTargetDistance "1.42"^^xsd:double ;
+    hw3:hasResidual "0.61"^^xsd:double .
+
+probe:ik_no_convergence a hw3:IKComputation ;
+    hw3:hasTargetDistance "0.72"^^xsd:double ;
+    hw3:hasResidual "0.15"^^xsd:double .

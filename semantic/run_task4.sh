@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 # =============================================================================
-# TAICA HW3 — Task 4 one-command runner
+# TAICA HW3 — Task 4 one-command runner (REUSE grounding + SHACL validation)
 #
-#   STEP 1  Check the toolchain (java / javac / python)
-#   STEP 2  Prepare Apache Jena 4.10.0 (incl. TDB2 triple store CLI tools)
-#   STEP 3  Grounding: run the three per-task evaluation scripts
-#           (ground_task1_fk.py / ground_task2_ik.py / ground_task3_insertion.py)
-#           -> output/task{1,2,3}_*.ttl
-#   STEP 4  OWL reasoning: Java Jena loads ontology + your graph + TA's graph,
-#           materializes deductions -> output/inferred_graph.ttl
-#   STEP 5  Load the TDB2 triple store (semantic/store/)
-#   STEP 6  Run queries/q*.rq against the store, save results to output/q*.csv
-#   STEP 7  Run score_semantic.py for scoring
+#   STEP 1  Check the toolchain (java / python)
+#   STEP 2  Prepare Apache Jena (its `shacl` CLI does the validation)
+#   STEP 3  REUSE grounding: ground_execution.py
+#           -> output/data.ttl        (your FK/IK execution process as RDF)
+#   STEP 4  REASONING: OWL reasoner + your reasoning.ttl axioms
+#           -> output/inferred.ttl    (evaluation classes DERIVED, not asserted)
+#   STEP 5  SHACL validation:
+#           - YOUR shapes.ttl vs output/data.ttl        -> output/validation.ttl
+#           - TA ta-shapes-full.ttl vs data.ttl         -> output/ta-validation.ttl
+#           - YOUR shapes.ttl vs ta-faulty-execution.ttl-> output/probe-validation.ttl
+#   STEP 6  Scoring (score_semantic.py parses reports + inferred graph)
 #
 # Usage (from the hw3 root or from semantic/):
-#   bash semantic/run_task4.sh                     # uses your your_fk / your_ik
-#   bash semantic/run_task4.sh --reference         # preview with reference solvers
-#   bash semantic/run_task4.sh --group my-group-05 # set the provenance id
+#   bash semantic/run_task4.sh --group <your-group-id>
+#   bash semantic/run_task4.sh --reference      # smoke test with reference IK
 #
 # Environment variables:
 #   PYTHON     python interpreter (default: python; must be the taica-hw3 env)
@@ -30,16 +30,14 @@ JENA_VERSION=4.10.0
 PYTHON="${PYTHON:-python}"
 GROUND_ARGS=("$@")
 
-echo "== STEP 1/7 | Checking toolchain =="
-for tool in java javac; do
-    command -v "$tool" >/dev/null 2>&1 || { echo "ERROR: '$tool' not found (JDK 11+ required)" >&2; exit 1; }
-done
+echo "== STEP 1/6 | Checking toolchain =="
+command -v java >/dev/null 2>&1 || { echo "ERROR: 'java' not found (JDK 11+ required)" >&2; exit 1; }
 command -v "$PYTHON" >/dev/null 2>&1 || { echo "ERROR: python '$PYTHON' not found" >&2; exit 1; }
 java -version 2>&1 | head -1
 "$PYTHON" -c "import numpy, pybullet; print('python + numpy + pybullet OK')"
 
 echo
-echo "== STEP 2/7 | Preparing Apache Jena ${JENA_VERSION} (with TDB2 tools) =="
+echo "== STEP 2/6 | Preparing Apache Jena ${JENA_VERSION} (shacl CLI) =="
 if [ -z "${JENA_HOME:-}" ]; then
     JENA_HOME="$PWD/.cache/apache-jena-$JENA_VERSION"
 fi
@@ -61,21 +59,18 @@ if [ ! -d "$JENA_HOME/lib" ]; then
     tar -xzf "$TARBALL" -C .cache
 fi
 export JENA_HOME
-echo "JENA_HOME = $JENA_HOME ($(ls "$JENA_HOME/lib"/*.jar | wc -l) jars)"
+echo "JENA_HOME = $JENA_HOME"
 
 echo
-echo "== STEP 3/7 | Grounding: per-task evaluation -> RDF graphs =="
+echo "== STEP 3/6 | REUSE grounding: FK/IK execution process -> output/data.ttl =="
 if [ -n "${GROUND_SCRIPT:-}" ]; then          # overridable for TA testing
     "$PYTHON" "$GROUND_SCRIPT" ${GROUND_ARGS[@]+"${GROUND_ARGS[@]}"}
 else
-    for s in ground_task1_fk.py ground_task2_ik.py ground_task3_insertion.py; do
-        echo "---- $s ----"
-        "$PYTHON" "$s" ${GROUND_ARGS[@]+"${GROUND_ARGS[@]}"}
-    done
+    "$PYTHON" ground_execution.py ${GROUND_ARGS[@]+"${GROUND_ARGS[@]}"}
 fi
 
 echo
-echo "== STEP 4/7 | OWL reasoning (Java Jena) -> inferred_graph.ttl =="
+echo "== STEP 4/6 | REASONING: OWL reasoner + your reasoning.ttl -> output/inferred.ttl =="
 CLASSES=java_semantic_engine/target/classes
 SRC=java_semantic_engine/src/main/java/course/taica/hw3/SemanticReasoner.java
 if [ ! -f "$CLASSES/course/taica/hw3/SemanticReasoner.class" ] || [ "$SRC" -nt "$CLASSES/course/taica/hw3/SemanticReasoner.class" ]; then
@@ -84,26 +79,22 @@ if [ ! -f "$CLASSES/course/taica/hw3/SemanticReasoner.class" ] || [ "$SRC" -nt "
     javac -cp "$JENA_HOME/lib/*" -d "$CLASSES" "$SRC"
 fi
 java -cp "$CLASSES:$JENA_HOME/lib/*" course.taica.hw3.SemanticReasoner \
-    output/inferred_graph.ttl - \
-    ontology/hw3-ontology.ttl \
-    output/task1_fk_graph.ttl output/task2_ik_graph.ttl output/task3_insertion_graph.ttl \
-    ontology/ta-robot-graph.ttl
+    output/inferred.ttl ontology/hw3-ontology.ttl reasoning.ttl output/data.ttl
 
 echo
-echo "== STEP 5/7 | Loading the TDB2 triple store (semantic/store/) =="
-rm -rf store
-"$JENA_HOME/bin/tdb2.tdbloader" --loc store output/inferred_graph.ttl
+echo "== STEP 5/6 | SHACL validation (Jena shacl CLI) =="
+SHACL="$JENA_HOME/bin/shacl"
+run_shacl () {  # $1 shapes, $2 data, $3 out
+    echo "---- shacl validate --shapes $1 --data $2 -> $3"
+    "$SHACL" validate --shapes "$1" --data "$2" > "$3" || true
+    grep -q 'sh:conforms  *true' "$3" \
+        && echo "     conforms: true" \
+        || echo "     conforms: false ($(grep -c 'sh:ValidationResult' "$3" || true) result(s))"
+}
+run_shacl shapes.ttl output/data.ttl output/validation.ttl
+run_shacl ta-shapes-full.ttl output/data.ttl output/ta-validation.ttl
+run_shacl shapes.ttl ta-faulty-execution.ttl output/probe-validation.ttl
 
 echo
-echo "== STEP 6/7 | SPARQL queries against the triple store =="
-for q in queries/q1_robot_specs.rq queries/q2_reachable_targets.rq queries/q3_interop_compare.rq queries/q4_task_evaluation_report.rq; do
-    name="$(basename "$q" .rq)"
-    echo
-    echo "---- $name ----"
-    "$JENA_HOME/bin/tdb2.tdbquery" --loc store --query "$q"
-    "$JENA_HOME/bin/tdb2.tdbquery" --loc store --query "$q" --results=CSV > "output/$name.csv"
-done
-
-echo
-echo "== STEP 7/7 | Scoring Task 4 =="
+echo "== STEP 6/6 | Scoring Task 4 =="
 "$PYTHON" score_semantic.py

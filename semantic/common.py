@@ -164,7 +164,6 @@ def write_graph(filename, lines, group_id, script_name):
 # reuse existing robot ontologies (all stubbed in ontology/hw3-ontology.ttl):
 #   - soma:6DPose + IEEE 1872 pos:Position  -> pose = position + quaternion
 #   - soma:JointState (hw3:isStateOfJoint)  -> one state per joint individual
-#   - soma:Trajectory + dul:directlyPrecedes -> ordered solver samples
 #   - QUDT unit IRIs (unit:M / unit:RAD)     -> units never live in strings
 # ---------------------------------------------------------------------------
 
@@ -214,56 +213,4 @@ def joint_config_to_ttl(node, q, joint_node_fmt='stu:my_ur5_joint{}'):
             '    soma:hasJointPosition {} .'.format(_double(angle)),
         ]
     lines.append('')
-    return lines
-
-
-def downsample_trajectory(samples, max_samples=6):
-    """Keep at most max_samples samples: always first and last, middle ones
-    spaced uniformly by list position."""
-    n = len(samples)
-    if n <= max_samples:
-        return list(samples)
-    idx = [int(round(k * (n - 1) / float(max_samples - 1)))
-           for k in range(max_samples)]
-    seen, picked = set(), []
-    for i in idx:
-        if i not in seen:
-            seen.add(i)
-            picked.append(samples[i])
-    return picked
-
-
-def trajectory_to_ttl(node, samples, joint_node_fmt='stu:my_ur5_joint{}',
-                      max_samples=6):
-    """Serialize an IK solver convergence trajectory (list of sample dicts
-    with keys iteration / q / ee_pose / residual, as recorded by
-    your_ik(..., trajectory_out=[])) as hw3:SolverTrajectory."""
-    if not samples:
-        return []
-    picked = downsample_trajectory(samples, max_samples=max_samples)
-    sample_nodes = ['{}_s{}'.format(node, k) for k in range(len(picked))]
-    lines = [
-        '{} a hw3:SolverTrajectory ;'.format(node),
-        '    hw3:hasSampleCount {} ;'.format(len(picked)),
-        '    hw3:hasTotalIterationCount {} ;'.format(
-            samples[-1]['iteration'] + 1),
-        '    hw3:hasTrajectorySample {} .'.format(' , '.join(sample_nodes)),
-        '',
-    ]
-    for k, (sample, sample_node) in enumerate(zip(picked, sample_nodes)):
-        lines += [
-            '{} a hw3:TrajectorySample ;'.format(sample_node),
-            '    hw3:hasSampleIndex {} ;'.format(k),
-            '    hw3:atSolverIteration {} ;'.format(sample['iteration']),
-            '    hw3:hasSampleResidual {} ;'.format(_double(sample['residual'])),
-            '    hw3:hasJointConfiguration {}_q ;'.format(sample_node),
-        ]
-        if k + 1 < len(picked):
-            lines.append('    dul:directlyPrecedes {} ;'.format(
-                sample_nodes[k + 1]))
-        lines.append('    hw3:hasEndEffectorPose {}_ee .'.format(sample_node))
-        lines.append('')
-        lines += joint_config_to_ttl('{}_q'.format(sample_node), sample['q'],
-                                     joint_node_fmt)
-        lines += pose_to_ttl('{}_ee'.format(sample_node), sample['ee_pose'])
     return lines

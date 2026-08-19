@@ -10,8 +10,8 @@ NYCU Physical AI / TAICA — UR5 Kinematics + Transporter Network + Semantic Kno
 - **Forward Kinematics (FK)**: Understand and implement forward kinematics for a 6-DoF robot arm using D-H parameters, including end-effector pose and Jacobian computation.
 - **Inverse Kinematics (IK)**: Understand and implement iterative inverse kinematics using Jacobian-based methods to compute joint configurations for a target end-effector pose.
 - **Application of IK in Robot Manipulation**: Understand how inverse kinematics is integrated into a complete manipulation pipeline by applying the implemented IK solver to the Transporter Network block insertion task (prepick → grasp → preplace → insertion). IK is a component of a larger robotic system, not an isolated mathematical function.
-- **Semantic Representation and Interoperability with a Triple Store**: Represent robot specifications and kinematic results using the shared robotics vocabulary `<http://taica.course/hw3/ontology#>`, store them in an RDF triple store, and query them through SPARQL. Experience how a common semantic representation enables independently developed robotics programs to share, query, compare, and reuse robot knowledge.
-- **Semantic Reasoning for Robot Decision Making**: Go beyond storing facts — use OWL reasoning over the grounded knowledge to validate robot states (joint-limit audit), understand algorithm processes (solver trajectories), compare robot capabilities (UR5 vs UR10), and finally drive an ALLOW/REFUSE **semantic gate** for grasp actions (Task 4 extension exercises).
+- **Grounding with Standard Robotics Ontologies**: Represent robot specifications and kinematic results as STRUCTURED RDF that reuses existing standard vocabularies — IEEE 1872 CORA robots, SOMA joints/joint-states/poses/episodes, IEEE 1872 POS positions, QUDT units — instead of ad-hoc strings. Symbol grounding turns the numbers of Tasks 1–3 into machine-readable knowledge.
+- **Reasoning & SHACL Validation of Execution Semantics**: Define OWL equivalence axioms so evaluation classes are DERIVED (never asserted), and write SHACL shapes that validate the grounded execution data — discovering problem states of the IK/FK process (arm out of range, no convergence) directly from the numbers, including a TA-provided faulty execution trace.
 
 ## Overview
 
@@ -20,8 +20,7 @@ NYCU Physical AI / TAICA — UR5 Kinematics + Transporter Network + Semantic Kno
 | 1 | Forward Kinematics | `fk.py` → `your_fk()` | `python fk.py` | 20 |
 | 2 | Inverse Kinematics | `ik.py` → `your_ik()` | `python ik.py` | 40 |
 | 3 | Transporter Network | (integration, no code change) | `python ravens/test.py ...` | 10 |
-| 4 | Semantic Knowledge + Triple Store | 1 function in `semantic/ground_task1_fk.py` + 1 function in `semantic/ground_task2_ik.py` + `semantic/queries/q3_interop_compare.rq` | `bash semantic/run_task4.sh` | 30 |
-| 4+ | Advanced Semantic Reasoning (4 guided exercises; Ex4 semantic gate = bonus) | `semantic/exercises/ex1~ex3*.rq` + `ex4-semantic-gate.ttl` | `bash semantic/exercises/run_exercises.sh` + `python semantic/exercises/ex4_semantic_gate.py` | report bonus |
+| 4 | Semantic Grounding (REUSE) + Reasoning + SHACL | 2 functions in `semantic/ground_execution.py` + `semantic/reasoning.ttl` + `semantic/shapes.ttl` | `bash semantic/run_task4.sh` | 30 |
 
 ---
 
@@ -55,7 +54,7 @@ sudo apt-get -y install openjdk-11-jdk
 java -version && javac -version
 ```
 
-The first run of Task 4 automatically downloads Apache Jena 4.10.0 (~30 MB, including the TDB2 triple store command-line tools). It is cached under `semantic/.cache/` and works offline afterwards.
+The first run of Task 4 automatically downloads Apache Jena 4.10.0 (~30 MB; its `shacl` CLI performs the validation and its rule engine the OWL reasoning). It is cached under `semantic/.cache/` and works offline afterwards.
 
 ---
 
@@ -89,7 +88,6 @@ Expected output (Error Count must be 0 for every test file):
 - Use your `your_fk` and its Jacobian in an iterative method (e.g., damped least squares / pseudo-inverse)
 - Be careful when computing delta x; tune hyper-parameters such as the step rate. Grading calls your function with **default arguments only**, so make your defaults the best ones
 - `pybullet_ik()` in the same file is a reference you may compare behavior against, but your implementation must not call pybullet IK APIs
-- The signature includes an optional `trajectory_out` list: when a caller passes one, append a sample dict `{'iteration', 'q', 'ee_pose', 'residual'}` per solver iteration. Grading never passes it, but Task 4's grounding uses it to record your solver's **convergence trajectory** (analyzed in Exercise 2) — wire it up while you are here
 
 **Step 2-2.** Verify:
 
@@ -123,131 +121,74 @@ Expected output: `Total Reward: 1.0 Done: True` for all 10 episodes.
 
 ---
 
-## Task 4. Semantic Robot Knowledge and Triple Store (30 points)
+## Task 4. Semantic Grounding (REUSE) + Reasoning + SHACL Validation (30 points)
 
-Turn the *numbers* from Tasks 1–3 into *semantics*: the shared vocabulary `<http://taica.course/hw3/ontology#>` defines concepts that **evaluate all three tasks** — FK correctness, IK solvability, and insertion success — as machine-readable facts. Each task has its own grounding script producing its own knowledge graph; OWL reasoning then derives one evaluation class per task, everything is loaded into a TDB2 triple store, and SPARQL reads the evaluation back out — side by side with a **UR10 knowledge graph independently produced by the TA**.
+Turn the *numbers* of your FK/IK **execution process** into *semantics*, then let the semantic layer find what went wrong. You implement three things — **grounding**, **reasoning**, and **SHACL**:
 
 ```
-ground_task1_fk.py        ──> task1_fk_graph.ttl        ─┐   Task 1 -> hw3:PassedFKComputation
-ground_task2_ik.py        ──> task2_ik_graph.ttl        ─┤   Task 2 -> hw3:SolvedIKComputation
-ground_task3_insertion.py ──> task3_insertion_graph.ttl ─┼─> OWL reasoning ─> TDB2 store ─> SPARQL
-TA's UR10 graph (provided)    ta-robot-graph.ttl        ─┘   Task 3 -> hw3:SuccessfulEpisode
+                         (1) grounding                    (2) reasoning
+your_fk / your_ik  ──>  ground_execution.py  ──>  data.ttl ──> OWL reasoner + reasoning.ttl
+  execution process       (2 TODO functions)                     -> inferred.ttl
+                                                  (3) SHACL
+                          shapes.ttl (2 TODO shapes)  vs  data.ttl            -> validation.ttl
+                          shapes.ttl                  vs  ta-faulty-execution.ttl
+                                                          (TA's faulty trace)  -> probe-validation.ttl
 ```
 
-**Reusability across groups**: your instances live in your own namespace `http://taica.course/hw3/data/<group-id>#` (derived from `--group`), while every group shares the `hw3:` vocabulary and the same target URIs. Any number of submissions can therefore be merged into one triple store without URI collisions, and the same queries compare everyone's results — you can load another group's graphs next to yours and study their design.
+**Step 4-1. Understand the REUSEd vocabulary.** Open [semantic/ontology/hw3-ontology.ttl](semantic/ontology/hw3-ontology.ttl):
+- Design rule: **reuse existing standard vocabularies wherever possible** — robots are `cora:Robot` (IEEE 1872 CORA), joints are `soma:RevoluteJoint`, joint states are `soma:JointState`, poses are `soma:6DPose` composed of an IEEE 1872 `pos:Position` + quaternion component, units are QUDT IRIs (`unit:M` / `unit:RAD`); `hw3:` only mints what no standard covers (kinematic computations, D-H parameters, statuses, distances)
+- **Structured representation, no JSON strings**: numeric values are typed `xsd:double` literals on structured nodes. `semantic/common.py` provides the serializers (`pose_to_ttl` / `joint_config_to_ttl`) — use them
 
-**Step 4-1. Understand the shared vocabulary.** Open [semantic/ontology/hw3-ontology.ttl](semantic/ontology/hw3-ontology.ttl):
-- Design rule: **reuse existing vocabularies wherever possible** — robots are `cora:Robot` (IEEE 1872 CORA), joints are `soma:RevoluteJoint`, joint states are `soma:JointState`, poses are `soma:6DPose` composed of an IEEE 1872 `pos:Position` + quaternion component, solver trajectories are `soma:Trajectory` ordered by `dul:directlyPrecedes`, episodes are `soma:Episode` (SOMA/EASE), units are QUDT IRIs (`unit:M` / `unit:RAD`); `hw3:` only mints what no standard covers (kinematic computations, D-H parameters, evaluation statuses)
-- **Structured representation, no JSON strings**: poses and joint vectors are structured nodes with typed `xsd:double` literals — never `"[0.1, 0.2, ...]"` string literals. `semantic/common.py` provides the serializers (`pose_to_ttl` / `joint_config_to_ttl` / `trajectory_to_ttl`); use them in your grounding functions
-- The three **shared targets** (`hw3:target_near` / `target_mid` / `target_far`) are the join keys for cross-graph comparison
-- Section 3b provides the **semantic-gate vocabulary** (`GraspableObject`, `isKinematicallyReachable`, and the `ExecutableGraspTarget` class declaration) used by Task 3's scene grounding; the gate's **reasoning rule is your work** in Exercise 4 (bonus)
-- Section 4 defines one **inference-defined evaluation class per task** (`PassedFKComputation`, `SolvedIKComputation`, `SuccessfulEpisode`): no program ever asserts them directly; the OWL reasoner derives membership from the grounded statuses
+**Step 4-2. GROUNDING — implement the ontology-API functions.** Open [semantic/ground_execution.py](semantic/ground_execution.py):
 
-Then open [semantic/ontology/ta-robot-graph.ttl](semantic/ontology/ta-robot-graph.ttl) (do not modify): results the TA published for the same targets with **two reference robots** — a **UR5** (the same arm as yours, driven by the TA's reference solver) and a **UR10** (same solver, longer arm). Together with your UR5 they form a controlled experiment: *same arm, different algorithm* vs *same algorithm, different arm* — which is what lets Exercise 3b attribute a failure to the ALGORITHM or to the arm's PHYSICAL limit.
+| Function | Grounds | Status |
+|---|---|---|
+| `fk_computation_to_triples()` | one FK execution: input config, EE pose, pose/Jacobian errors | **worked example** — read it first |
+| `robot_spec_to_triples()` | robot spec: D-H params + joint limits for all 6 joints | **TODO 1** |
+| `ik_computation_to_triples()` | one IK execution: status, residual, `hw3:hasTargetDistance`, structured joint configuration | **TODO 2** |
 
-**Step 4-2. Implement the grounding (2 functions across 2 files).**
+The script runs your `your_fk` (3 test cases vs ground truth) and `your_ik` (3 fixed targets: near / mid / far) and writes everything into **`output/data.ttl`** — your execution process as a semantic graph.
 
-Design rule — **ground what downstream consumers need**: every graph below feeds specific later steps (the exercises in Step 4-5 and the semantic gate), so the listed fields are requirements, not suggestions.
+**Step 4-3. REASONING — define the evaluation classes.** Open [semantic/reasoning.ttl](semantic/reasoning.ttl): `SolvedIKComputation ≡ IKComputation ⊓ (hasIKStatus value "SOLVED")` is the worked example; you add `OutOfReachIKComputation` the same way. The OWL reasoner derives the memberships into `output/inferred.ttl` — expected: `SolvedIKComputation = {ik_target_near}`, `OutOfReachIKComputation = {ik_target_mid, ik_target_far}`. Memberships are **never asserted by your code** — if you delete your axiom, the derived set becomes empty.
 
-| File | Grounds | Downstream consumers | Your work |
-|---|---|---|---|
-| [semantic/ground_task1_fk.py](semantic/ground_task1_fk.py) | robot spec (D-H params, joint limits) + FK evaluation vs ground truth (structured input config + EE pose, errors, PASS/FAIL) | limits → Ex1; D-H → Ex3; PASS → q4 | TODO `robot_spec_to_triples()`; `fk_result_to_triples()` is the **worked example** — read it first |
-| [semantic/ground_task2_ik.py](semantic/ground_task2_ik.py) | IK evaluation on the 3 shared targets: status + residual + **structured `hw3:JointConfiguration`** (one `soma:JointState` per joint) + **solver trajectory** (`trajectory_out`) | JointStates → Ex1; trajectory → Ex2; shared targets + status → Ex3/q2/q3 | TODO `ik_result_to_triples()` |
-| [semantic/ground_task3_insertion.py](semantic/ground_task3_insertion.py) | insertion episodes (reward, SUCCESS/FAILURE, `hw3:manipulatesObject`) + **scene semantics** (block graspable / reachable; fixture not graspable) | episodes → q4; scene facts → the raw material for the Exercise 4 semantic gate | none (TA-provided) — but it needs you to have **run Task 3** so `ravens/test.py` has written `block-insertion-easy-transporter-*.pkl` |
+**Step 4-4. SHACL — write the validation shapes.** Open [semantic/shapes.ttl](semantic/shapes.ttl): the FK-accuracy shape (`hasPoseError <= 0.005` else `FK_INACCURATE`) is the worked example; you add two shapes — `hasTargetDistance <= 0.90` else **`ARM_OUT_OF_RANGE`** (arm beyond the UR5 workspace) and `hasResidual <= 0.02` else **`NO_CONVERGENCE`**. Message prefixes are graded, keep them exact. Two validations run:
+- your shapes vs **your** `data.ttl` → `output/validation.ttl` — on correct IK it flags exactly `target_mid` / `target_far` (they really are out of range) and leaves `target_near` clean
+- your shapes vs **[semantic/ta-faulty-execution.ttl](semantic/ta-faulty-execution.ttl)** — a TA-provided *faulty* IK/FK execution trace; your shapes must catch its planted problems (one out-of-range IK, one non-converging IK, one inaccurate FK) and leave the good case clean
 
-Notes: float literals must be written as `"..."^^xsd:double`; `solvesForTarget` must point to the shared target URI in the `hw3:` namespace (if you write it in `stu:`, the cross-graph join in Q3 will not find your results).
+Note the division of labour: **OWL reasons over symbols** (status strings → concept membership), **SHACL validates numbers** (thresholds on distances/residuals/errors) — OWL cannot compare numeric values, which is exactly why both layers exist.
 
-**Step 4-3. Complete the interoperability query.** Open [semantic/queries/q3_interop_compare.rq](semantic/queries/q3_interop_compare.rq) and complete the SPARQL query following the hints: for every shared target, list **each robot's IK status** (3 targets × 3 robots = 9 rows: your UR5 + the TA's UR5 + the TA's UR10; the same query automatically scales to N robots when more groups' graphs are loaded). q1, q2, and q4 are provided — read them before writing q3.
-
-**Step 4-4. Run and score with one command.**
+**Step 4-5. Run and score with one command.**
 
 ```bash
 conda activate taica-hw3
 bash semantic/run_task4.sh --group <your-group-id>   # uses your your_fk / your_ik
-# Before finishing Task 1/2 you can preview the pipeline with:
-# bash semantic/run_task4.sh --reference
 ```
 
-The script runs 7 steps: toolchain check → prepare Jena/TDB2 → the three grounding scripts → OWL reasoning (produces `semantic/output/inferred_graph.ttl`) → load the triple store (`semantic/store/`) → run q1–q4 (results saved to `semantic/output/q*.csv`) → scoring.
-
-Expected output at the end (q4 is the semantic evaluation report of all three tasks):
+The script runs 6 steps: toolchain → Jena → grounding (`data.ttl`) → reasoning (`inferred.ttl`) → SHACL (three validation reports) → scoring. Expected output:
 
 ```
----- q4_task_evaluation_report ----
-| hw3:PassedFKComputation | 3  |
-| hw3:SolvedIKComputation | 1  |
-| hw3:SuccessfulEpisode   | 10 |
-
-  [S1] q1 robot summary ................ OK  (+2)
-  [S1] DH parameters (6 / 6 joints) .... OK  (+6)
-  [S2] Task 1 FK evaluation (3/3 PASS) . OK  (+4.0)
-  [S2] Task 2 IK statuses (3/3) ........ OK  (+4.0)
-  [S2] q2 inferred SolvedIKComputation . OK  (+2)
-  [S2] Task 3 episodes (10 SUCCESS) .... OK  (+2)
-  [S3] q3 interop comparison matrix .... OK  (+10)
+  [S1] grounding structure (0 violations) OK  (+10)
+  [S2] inferred SolvedIKComputation = {near} .. OK  (+3)
+  [S2] inferred OutOfReach = {mid, far} ...... OK  (+3)
+  [S3] target_mid flagged ARM_OUT_OF_RANGE .... OK  (+2)
+  [S3] target_far flagged ARM_OUT_OF_RANGE .... OK  (+2)
+  [S3] target_near clean (no problem flags) ... OK  (+1)
+  [S3] no JOINT_LIMIT_VIOLATION ............... OK  (+1)
+  [S4] faulty trace: good case clean .......... OK  (+2)
+  [S4] faulty trace: out-of-range flagged ..... OK  (+2)
+  [S4] faulty trace: no-convergence flagged ... OK  (+2)
+  [S4] faulty trace: bad FK flagged ........... OK  (+2)
   Your Task 4 Score : 30.0 / 30.0
 ```
 
-The correct Q3 result showcases the point of interoperability: `target_mid` is `OUT_OF_REACH` for both UR5s but `SOLVED` for the TA's UR10 — three pipelines that have never seen each other's code can answer "which target can only the longer arm reach?" through the shared vocabulary alone, and the UR5/UR5 agreement is what proves the failure is physical, not algorithmic.
-
-**Step 4-5. Advanced Semantic Reasoning Exercises ([semantic/exercises/](semantic/exercises/README.md)).**
-
-The four guided exercises form a progressive learning path over the graphs you just built — this is what the semantic layer is FOR:
-
-```
-Exercise 1            Exercise 2              Exercise 3               Exercise 4
-Joint Limit Audit  →  Trajectory Convergence → Cross-Robot Comparison → Semantic Gate
-(Data Validation)     (Process Understanding)  (Interoperability)       (Decision Making)
-```
-
-| Exercise | You implement | It teaches |
-|---|---|---|
-| 1 · Joint Limit Audit | `ex1_joint_limit_audit.rq` — join each `soma:JointState` with its joint's limits, FILTER violations | the semantic layer can AUDIT execution results against the robot model |
-| 2 · Trajectory Convergence | `ex2_trajectory_convergence.rq` (+ bonus `ex2b`) — first/last residual, iteration counts, `dul:directlyPrecedes` ordering | semantic representation preserves the ALGORITHM PROCESS, not just results |
-| 3 · Cross-Robot Comparison | `ex3_cross_robot_comparison.rq` (matrix + arm-length evidence) and `ex3b_failure_diagnosis.rq` (nested-IF attribution across your UR5 / TA UR5 / TA UR10) | interoperability, plus controlled-experiment reasoning: ALGORITHM issue vs PHYSICAL limit |
-| 4 · Semantic Gate **(bonus)** | `ex4-semantic-gate.ttl` — define the gate's reasoning rule yourself: `hw3:ExecutableGraspTarget ≡ GraspableObject ⊓ (isKinematicallyReachable value true)` | OWL equivalent-class reasoning drives ALLOW/REFUSE robot decisions with explainable verdicts |
-
-**How the reasoning works in each exercise** (read this before writing queries):
-
-*Ex1 — graph join + value-level audit.* The reasoning is a JOIN across two independently grounded worlds: the robot **model** (Task 1: joints with limits) and the execution **results** (Task 2: JointStates). The link is `hw3:isStateOfJoint`:
-
-```
-?ik  a hw3:IKComputation ; hw3:hasJointConfiguration ?cfg .
-?cfg hw3:hasJointState ?js .
-?js  hw3:isStateOfJoint ?joint ; soma:hasJointPosition ?angle .   # result → model
-?joint hw3:hasJointLowerLimit ?lower ; hw3:hasJointUpperLimit ?upper .
-FILTER(?angle < ?lower || ?angle > ?upper)                        # the audit itself
-```
-
-The comparison is deliberately a SPARQL `FILTER`, **not** OWL — OWL cannot compare numbers (that is the course's layering principle). Interpretation: all rows OK = the solver respects the model; a value exactly ON a limit is evidence the solver's clipping engaged (look at `target_far`'s joint1/joint2).
-
-*Ex2 — reasoning over a process representation.* A trajectory is a linked list in the graph: samples carry `hasSampleIndex` (random access) and are chained by `dul:directlyPrecedes` (adjacency). Three inferences: (a) **convergence** — join the index-0 sample with the index-MAX sample (aggregate subquery `GROUP BY ?traj`) and compare residuals; (b) **speed** — `ORDER BY ?iters` on `hasTotalIterationCount`: SOLVED targets converge in few iterations, OUT_OF_REACH ones exhaust `max_iters`; (c) **oscillation** (ex2b) — self-join adjacent pairs `?s dul:directlyPrecedes ?sNext` and `FILTER(?rNext > ?r)`: a residual that rises near a workspace boundary is the DLS solver pushing against an unreachable target. Conclusion to draw: the graph preserved the *algorithm's process*, so process questions become queries.
-
-*Ex3 — interoperability + failure-diagnosis reasoning.* Four mechanisms compose: (a) **shared URIs as join keys** — all graphs assert results against the same `hw3:target_*` individuals, so the cross-robot join needs no schema mapping; (b) **class-level generalization** — all arms are `cora:Robot`, so one pattern covers N robots automatically; (c) **evidence aggregation** — `(SUM(ABS(?a)) AS ?armLength)` over each robot's `hw3:dh_a` derives a capability estimate *from the spec, inside the query* (≈0.82 m vs ≈1.18 m); (d) **controlled-experiment attribution** (ex3b) — with three robots the failure cause becomes derivable: your UR5 vs `ta:ta_ur5` is *same arm, different algorithm* (a status mismatch ⇒ ALGORITHM ISSUE), `ta:ta_ur5` vs `ta:ta_ur10` is *same algorithm, different arm* (a mismatch ⇒ PHYSICAL LIMIT). Expected diagnoses: near = OK, mid = PHYSICAL LIMIT of UR5, far = BEYOND BOTH ARMS — and if your solver were buggy, only the near row would flip to ALGORITHM ISSUE.
-
-*Ex4 — OWL equivalent-class derivation (the only exercise where OWL itself reasons).* Given your axiom and the scene facts, Jena's rule reasoner derives membership in four steps (visible in the exported derivation traces):
-
-```
-1. Facts:   ex:objectA a hw3:GraspableObject .
-            ex:objectA hw3:isKinematicallyReachable true .
-2. hasValue recognition: anything with isKinematicallyReachable=true
-            → rdf:type of the (anonymous) Restriction class
-3. intersectionRecognition: member of ALL operands
-            → rdf:type of the intersection class
-4. equivalentClass: → ex:objectA a hw3:ExecutableGraspTarget      # ALLOW
-```
-
-REFUSE verdicts are explained by the missing premise: objectB never enters step 3 (no `GraspableObject` type — semantic exclusion); objectC fails step 2 (`reachable false` — geometric exclusion). Note the division of labour: the boolean `isKinematicallyReachable` was produced by the *numeric* layer; OWL only does the *concept* classification — and every verdict has a replayable reasoning chain.
-
-**What to write in the report**: the per-exercise conclusion scope (required / bonus / out-of-bounds claims) and a ground-truth model answer for each exercise are in [semantic/exercises/REPORT_GUIDE.md](semantic/exercises/REPORT_GUIDE.md) — read it before writing. Run `bash semantic/exercises/run_exercises.sh` for Ex1–Ex3 (against your triple store) and `python semantic/exercises/ex4_semantic_gate.py` for Ex4. Expected Ex4 verdicts: Object A (graspable, reachable) ALLOW; Object B (fixture — not graspable) REFUSE, *semantic exclusion*; Object C (out of reach) REFUSE, *geometric exclusion*. Members of `ExecutableGraspTarget` are never asserted — your rule derives them. Full specs and hints are in [semantic/exercises/README.md](semantic/exercises/README.md).
+Grading uses **[semantic/ta-shapes-full.ttl](semantic/ta-shapes-full.ttl)** — the TA's complete SHACL suite: `STRUCTURE:*` shapes check your grounding (types, required properties, `xsd:double` typing, exactly 6 `soma:JointState` per configuration), problem shapes re-discover ARM_OUT_OF_RANGE / NO_CONVERGENCE from your numbers, and a SHACL-SPARQL shape cross-checks every joint angle against its joint's limits (`JOINT_LIMIT_VIOLATION`).
 
 **Task 4 FAQ**
 - `python` is not the taica-hw3 environment → `PYTHON=~/miniconda3/envs/taica-hw3/bin/python bash semantic/run_task4.sh`
 - Jena download fails → manually extract apache-jena-4.10.0 and `export JENA_HOME=<path>` before running
-- q2 is empty → reasoning did not take effect; check that the `hasIKStatus` literal is exactly `"SOLVED"` (case-sensitive, no extra whitespace)
-- Task 3 episodes item FAILs → run Task 3 first; `ground_task3_insertion.py` reads the pkl that `ravens/test.py` writes under `ravens/`
-
----
+- S1 reports STRUCTURE violations → open `output/ta-validation.ttl`; each `sh:resultMessage` tells you which property/typing is missing (a bare `0.0892` instead of `"0.0892"^^xsd:double` is the classic one)
+- S2 FAILs → reasoning did not derive; check your axiom uses `owl:hasValue "OUT_OF_REACH"` exactly (case-sensitive) and that you did not assert memberships by hand
+- S4 FAILs → your `sh:message` must START with `ARM_OUT_OF_RANGE:` / `NO_CONVERGENCE:` — the grader matches the prefix
 
 ## Grading
 
@@ -256,18 +197,17 @@ REFUSE verdicts are explained by the missing premise: objectB never enters step 
 | Task 1: FK correctness (FK 10 + Jacobian 10, TA test cases) | 20 |
 | Task 2: IK correctness (TA test cases, default arguments only) | 40 |
 | Task 3: Transporter reward over 10 test episodes | 10 |
-| Task 4: S1 spec grounding 10 + S2 result grounding 10 + S3 SPARQL interop 10 | 30 |
+| Task 4: S1 grounding structure 10 + S2 reasoning 6 + S3 problem detection 6 + S4 SHACL vs faulty trace 8 | 30 |
 | **Total** | **100** |
 
 ## Submission
 
 1. `fk.py` (with `your_fk` completed)
 2. `ik.py` (with `your_ik` completed)
-3. `semantic/ground_task1_fk.py` (with `robot_spec_to_triples()` completed)
-4. `semantic/ground_task2_ik.py` (with `ik_result_to_triples()` completed)
-5. `semantic/queries/q3_interop_compare.rq` (completed)
-6. (Advanced, report bonus) `semantic/exercises/ex1~ex3*.rq` and `ex4-semantic-gate.ttl` (completed)
-7. A short report: screenshots of all four tasks, plus (a) an explanation based on your Task 4 query results of "why `target_mid` is semantically the same target for both arms, yet geometrically reachable by only one of them", and (b) if you did the bonus Ex4: the reasoning chain for why Object B is REFUSED (semantic exclusion)
+3. `semantic/ground_execution.py` (with both TODO functions completed)
+4. `semantic/reasoning.ttl` (with the `OutOfReachIKComputation` axiom completed)
+5. `semantic/shapes.ttl` (with the two problem shapes completed)
+6. A short report: screenshots of all four tasks, plus an explanation of what your SHACL validation discovered in `output/validation.ttl` and in the TA faulty trace — and why the OWL-derived classes (symbols) agree with the SHACL findings (numbers)
 
 > Note: `semantic/output/`, `semantic/store/`, and `semantic/.cache/` are auto-generated — do not submit them.
 

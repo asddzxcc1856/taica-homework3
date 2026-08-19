@@ -1,0 +1,49 @@
+@prefix sh:   <http://www.w3.org/ns/shacl#> .
+@prefix hw3:  <http://taica.course/hw3/ontology#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+
+# =============================================================================
+# Task 4 / SHACL — validate your grounded execution data (output/data.ttl)
+#
+# SHACL shapes 直接讀 grounding 出來的「數值」,發現 IK/FK 執行過程的問題狀態。
+# run_task4.sh 會用 Jena 的 shacl CLI 執行:
+#     shacl validate --shapes shapes.ttl --data output/data.ttl
+#     -> output/validation.ttl   (SHACL validation report, Turtle)
+#
+# 評分會 (1) 用 TA 完整版 ta-shapes-full.ttl 驗你的 data.ttl,
+#        (2) 用「你的」shapes.ttl 驗 probe-data.ttl(內含已知好/壞案例),
+# 所以 sh:message 的字首必須照下面規定寫,評分程式靠字首辨識。
+# =============================================================================
+
+# ---- Worked example (already implemented): FK accuracy check ----------------
+# FK 計算的 pose 誤差必須在課程門檻 0.005 m 內,否則回報 FK_INACCURATE。
+hw3:FKAccuracyShape a sh:NodeShape ;
+    sh:targetClass hw3:FKComputation ;
+    sh:property [
+        sh:path hw3:hasPoseError ;
+        sh:maxInclusive "0.005"^^xsd:double ;
+        sh:message "FK_INACCURATE: pose error above the 0.005 m course threshold" ;
+    ] .
+
+# ---- STUDENT TODO 1: arm out of range ---------------------------------------
+# 寫一個 sh:NodeShape,targetClass hw3:IKComputation:
+#   hw3:hasTargetDistance 必須 <= 0.90 (UR5 reach, meters),
+#   違反時 sh:message 必須以 "ARM_OUT_OF_RANGE:" 開頭。
+# (模仿上面 worked example 的寫法,換 path / 門檻 / message 即可)
+
+# ------------------------- your shape ----------------------------------------
+
+
+
+# -----------------------------------------------------------------------------
+
+# ---- STUDENT TODO 2: not converged ------------------------------------------
+# 寫一個 sh:NodeShape,targetClass hw3:IKComputation:
+#   hw3:hasResidual 必須 <= 0.02 (course threshold, meters),
+#   違反時 sh:message 必須以 "NO_CONVERGENCE:" 開頭。
+
+# ------------------------- your shape ----------------------------------------
+
+
+
+# -----------------------------------------------------------------------------
