@@ -6,13 +6,11 @@
 #   STEP 2  Prepare Apache Jena (its `shacl` CLI does the validation)
 #   STEP 3  REUSE grounding: ground_execution.py
 #           -> output/data.ttl        (your FK/IK execution process as RDF)
-#   STEP 4  REASONING: OWL reasoner + your reasoning.ttl axioms
-#           -> output/inferred.ttl    (evaluation classes DERIVED, not asserted)
-#   STEP 5  SHACL validation:
+#   STEP 4  SHACL validation:
 #           - YOUR shapes.ttl vs output/data.ttl        -> output/validation.ttl
 #           - TA ta-shapes-full.ttl vs data.ttl         -> output/ta-validation.ttl
 #           - YOUR shapes.ttl vs ta-faulty-execution.ttl-> output/probe-validation.ttl
-#   STEP 6  Scoring (score_semantic.py parses reports + inferred graph)
+#   STEP 5  Scoring (score_semantic.py parses the validation reports)
 #
 # Usage (from the hw3 root or from semantic/):
 #   bash semantic/run_task4.sh --group <your-group-id>
@@ -30,14 +28,14 @@ JENA_VERSION=4.10.0
 PYTHON="${PYTHON:-python}"
 GROUND_ARGS=("$@")
 
-echo "== STEP 1/6 | Checking toolchain =="
+echo "== STEP 1/5 | Checking toolchain =="
 command -v java >/dev/null 2>&1 || { echo "ERROR: 'java' not found (JDK 11+ required)" >&2; exit 1; }
 command -v "$PYTHON" >/dev/null 2>&1 || { echo "ERROR: python '$PYTHON' not found" >&2; exit 1; }
 java -version 2>&1 | head -1
 "$PYTHON" -c "import numpy, pybullet; print('python + numpy + pybullet OK')"
 
 echo
-echo "== STEP 2/6 | Preparing Apache Jena ${JENA_VERSION} (shacl CLI) =="
+echo "== STEP 2/5 | Preparing Apache Jena ${JENA_VERSION} (shacl CLI) =="
 if [ -z "${JENA_HOME:-}" ]; then
     JENA_HOME="$PWD/.cache/apache-jena-$JENA_VERSION"
 fi
@@ -62,7 +60,7 @@ export JENA_HOME
 echo "JENA_HOME = $JENA_HOME"
 
 echo
-echo "== STEP 3/6 | REUSE grounding: FK/IK execution process -> output/data.ttl =="
+echo "== STEP 3/5 | REUSE grounding: FK/IK execution process -> output/data.ttl =="
 if [ -n "${GROUND_SCRIPT:-}" ]; then          # overridable for TA testing
     "$PYTHON" "$GROUND_SCRIPT" ${GROUND_ARGS[@]+"${GROUND_ARGS[@]}"}
 else
@@ -70,19 +68,7 @@ else
 fi
 
 echo
-echo "== STEP 4/6 | REASONING: OWL reasoner + your reasoning.ttl -> output/inferred.ttl =="
-CLASSES=java_semantic_engine/target/classes
-SRC=java_semantic_engine/src/main/java/course/taica/hw3/SemanticReasoner.java
-if [ ! -f "$CLASSES/course/taica/hw3/SemanticReasoner.class" ] || [ "$SRC" -nt "$CLASSES/course/taica/hw3/SemanticReasoner.class" ]; then
-    echo "[JAVAC] compiling SemanticReasoner.java ..."
-    mkdir -p "$CLASSES"
-    javac -cp "$JENA_HOME/lib/*" -d "$CLASSES" "$SRC"
-fi
-java -cp "$CLASSES:$JENA_HOME/lib/*" course.taica.hw3.SemanticReasoner \
-    output/inferred.ttl ontology/hw3-ontology.ttl reasoning.ttl output/data.ttl
-
-echo
-echo "== STEP 5/6 | SHACL validation (Jena shacl CLI) =="
+echo "== STEP 4/5 | SHACL validation (Jena shacl CLI) =="
 SHACL="$JENA_HOME/bin/shacl"
 run_shacl () {  # $1 shapes, $2 data, $3 out
     echo "---- shacl validate --shapes $1 --data $2 -> $3"
@@ -96,5 +82,5 @@ run_shacl ta-shapes-full.ttl output/data.ttl output/ta-validation.ttl
 run_shacl shapes.ttl ta-faulty-execution.ttl output/probe-validation.ttl
 
 echo
-echo "== STEP 6/6 | Scoring Task 4 =="
+echo "== STEP 5/5 | Scoring Task 4 =="
 "$PYTHON" score_semantic.py

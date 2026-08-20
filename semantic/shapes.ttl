@@ -11,8 +11,12 @@
 #     -> output/validation.ttl   (SHACL validation report, Turtle)
 #
 # 評分會 (1) 用 TA 完整版 ta-shapes-full.ttl 驗你的 data.ttl,
-#        (2) 用「你的」shapes.ttl 驗 probe-data.ttl(內含已知好/壞案例),
-# 所以 sh:message 的字首必須照下面規定寫,評分程式靠字首辨識。
+#        (2) 用「你的」shapes.ttl 驗 TA 提供的 24 筆執行紀錄
+#            (ta-faulty-execution.ttl, 好壞混合、含門檻邊界值),
+#            驗證結果逐筆與標準答案 ta-answer-key.json 比對,
+#            每筆的旗標必須「完全一致」(不多報、不漏報) 才得分。
+# 所以 sh:message 的字首必須照下面規定寫,評分程式靠字首辨識;
+# 門檻語意必須用 sh:maxInclusive (含等於) —— 答案集內含恰等於門檻的案例。
 # =============================================================================
 
 # ---- Worked example (already implemented): FK accuracy check ----------------

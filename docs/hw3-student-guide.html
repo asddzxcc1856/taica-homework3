@@ -141,7 +141,7 @@
     padding: 1px 5px; border-radius: 4px;
   }
 
-  /* 來源 chip:標準引用 vs 自創 vs 推理導出 */
+  /* 來源 chip:標準引用 vs 自創 vs SHACL 偵測 */
   .chip {
     display: inline-block; font-size: 11.5px; font-weight: 600;
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -203,7 +203,7 @@
 <header class="masthead">
   <div class="eyebrow">NYCU Physical AI · HW3 Robot Manipulation</div>
   <h1>HW3 學生引導手冊 — Task 1–4</h1>
-  <p class="lede">UR5 運動學 × Transporter Network × 語意知識圖。本手冊帶你走過四個任務的流程、
+  <p class="lede">UR5 運動學 × FSM 操作管線 × 語意知識圖。本手冊帶你走過四個任務的流程、
   每一步該 ground 的語意資訊與它的下游用途。全作業使用同一套<strong>結構化表示法</strong>：
   數值掛在型別化節點上、引用既有機器人本體、不使用 JSON 字串 literal。</p>
 </header>
@@ -212,23 +212,21 @@
   <a href="#base">共通語意基座</a>
   <a href="#t1">Task 1 · FK</a>
   <a href="#t2">Task 2 · IK</a>
-  <a href="#t3">Task 3 · Transporter</a>
+  <a href="#t3">Task 3 · FSM</a>
   <a href="#t4">Task 4 · Triple Store</a>
 </nav>
 
 <!-- ================================================================ -->
 <section id="base">
   <h2>共通語意基座</h2>
-  <p class="sec-intro">整個作業採三層式架構：數值層產生事實，Grounding 層把事實轉成 RDF，語意層做 OWL 推理與 SPARQL 查詢。</p>
+  <p class="sec-intro">整個作業採三層式架構：數值層產生事實，Grounding 層把事實轉成 RDF，SHACL 驗證層從語意資料中發現執行問題。</p>
 
   <div class="layers">
-    <div class="layer"><strong>1 · 數值層</strong><span>fk.py / ik.py / ravens — 關節角、pose、殘差、reward（PyBullet 模擬）</span></div>
+    <div class="layer"><strong>1 · 數值層</strong><span>fk.py / ik.py / fsm_task.py — 關節角、pose、殘差、回合結果（PyBullet 模擬）</span></div>
     <div class="layer-arrow">│ Symbol Grounding（ground_task*.py + common.py 序列化 helper）▼</div>
     <div class="layer"><strong>2 · 語意層</strong><span>hw3-ontology.ttl 共用詞彙 ＋ 你的執行過程知識圖 data.ttl（結構化節點）</span></div>
-    <div class="layer-arrow">│ Jena OWL Reasoner ▼</div>
-    <div class="layer"><strong>3 · 推理層</strong><span>OWL reasoner ＋ 你在 reasoning.ttl 定義的等價公理 → 評估類成員全由推理導出、從不手動 assert</span></div>
     <div class="layer-arrow">│ Jena shacl CLI ▼</div>
-    <div class="layer"><strong>4 · 驗證層</strong><span>SHACL（你的 shapes.ttl ＋ TA 完整版）：從數值發現 ARM_OUT_OF_RANGE / NO_CONVERGENCE / FK_INACCURATE，含 TA 提供的有問題執行過程</span></div>
+    <div class="layer"><strong>3 · 驗證層</strong><span>SHACL（你的 shapes.ttl ＋ TA 完整版）：從數值發現 ARM_OUT_OF_RANGE / NO_CONVERGENCE / FK_INACCURATE，含 TA 提供的有問題執行過程</span></div>
   </div>
 
   <h3>命名空間</h3>
@@ -255,7 +253,7 @@
   <div class="legend">
     <span><span class="chip std">標準引用</span> 既有本體詞彙（IRI 與官方一致，離線存根）</span>
     <span><span class="chip mint">hw3: 自創</span> 課程特有概念</span>
-    <span><span class="chip inf">推理導出</span> 只由 OWL reasoner 具體化，程式從不直接寫入</span>
+    <span><span class="chip inf">SHACL 偵測</span> 由 shapes 從數值中發現的問題旗標（ARM_OUT_OF_RANGE 等）</span>
   </div>
 </section>
 
@@ -350,7 +348,7 @@ stu:fk_case_0_ee_pos <span class="k">a</span> pos:Position ;
       <tr><td><code>soma:6DPose</code>（⊑ <code>pos:Pose</code>, <code>dul:Region</code>）</td><td><span class="chip std">SOMA</span></td><td>共用目標 <code>hw3:target_*</code>：跨圖比較的 join key，座標在 <code>pos:Position</code> 元件節點上</td></tr>
       <tr><td><code>hw3:IKComputation</code></td><td><span class="chip mint">hw3:</span></td><td>一次 IK 計算（⊑ <code>dul:Event</code>）</td></tr>
       <tr><td><code>hw3:solvesForTarget</code></td><td><span class="chip mint">hw3:</span></td><td>IK → 目標 pose（⊑ <code>dul:hasRegion</code>）</td></tr>
-      <tr><td><code>hw3:hasIKStatus / hasResidual</code></td><td><span class="chip mint">hw3:</span></td><td>求解狀態字串（reasoning 的 hasValue 輸入）、Cartesian 殘差（SHACL <code>NO_CONVERGENCE</code> 的輸入）</td></tr>
+      <tr><td><code>hw3:hasIKStatus / hasResidual</code></td><td><span class="chip mint">hw3:</span></td><td>求解狀態字串（數值層判定）、Cartesian 殘差（SHACL <code>NO_CONVERGENCE</code> 的輸入）</td></tr>
       <tr><td><code>hw3:hasTargetDistance</code></td><td><span class="chip mint">hw3:</span></td><td>目標與肩部的距離（公尺，數值層計算）——SHACL <code>ARM_OUT_OF_RANGE</code> 的輸入</td></tr>
       <tr><td><code>hw3:hasJointConfiguration</code></td><td><span class="chip mint">hw3:</span></td><td>ObjectProperty → 結構化 <code>hw3:JointConfiguration</code>（每個關節一個 <code>soma:JointState</code>，指回關節個體）</td></tr>
     </tbody>
@@ -372,11 +370,11 @@ stu:ik_target_near_q_js1 <span class="k">a</span> soma:JointState ;   <span clas
     soma:hasJointPosition "-3.068552"^^xsd:double .</pre>
   <p class="src">semantic/output/task2_ik_graph.ttl</p>
 
-  <p class="note"><strong>Grounding 的用途</strong>：結構化 <code>JointState</code> 受 TA STRUCTURE shapes 驗證（每組態恰 6 個、皆為 xsd:double）；狀態字串餵 reasoning、距離與殘差餵 SHACL——同一份執行資料同時支撐符號推理與數值驗證。</p>
+  <p class="note"><strong>Grounding 的用途</strong>：結構化 <code>JointState</code> 受 TA STRUCTURE shapes 驗證（每組態恰 6 個、皆為 xsd:double）；距離、殘差與誤差餵 SHACL——同一份執行資料直接支撐宣告式驗證。</p>
 
   <div class="derived">
-    <span class="tag">推理導出 · 由你定義的評估類（reasoning.ttl）</span>
-    <p><code>hw3:SolvedIKComputation ≡ hw3:IKComputation ⊓ (hw3:hasIKStatus value "SOLVED")</code>（worked example）；你再依同一模式定義 <code>OutOfReachIKComputation</code>。成員全由 reasoner 推導——刪掉公理重跑，集合即為空。</p>
+    <span class="tag">SHACL · Task 2 的驗證角色</span>
+    <p><code>hasTargetDistance ≤ 0.90</code> 違反 → <code>ARM_OUT_OF_RANGE</code>；<code>hasResidual ≤ 0.02</code> 違反 → <code>NO_CONVERGENCE</code>——兩個 shape 都是你在 shapes.ttl 要實作的 TODO，直接從 grounding 的數值發現執行問題。</p>
   </div>
 </section>
 
@@ -384,63 +382,80 @@ stu:ik_target_near_q_js1 <span class="k">a</span> soma:JointState ;   <span clas
 <!-- ================================================================ -->
 <section id="t3">
   <div class="task-eyebrow">TASK 3</div>
-  <h2>Transporter Network — 積木插入</h2>
-  <p class="sec-intro">用自己的 IK 驅動 Transporter Network 完成 block insertion（prepick → grasp → preplace → insertion），驗證 IK 在完整操作管線中的表現。</p>
+  <h2>FSM Manipulation Pipeline — 有限狀態機操作管線</h2>
+  <p class="sec-intro">不再使用學習模型與 ravens——一個確定性的 <strong>Finite State Machine</strong>（<code>fsm_task.py</code>，TA 提供、無學生 TODO）驅動 UR5 完成 10 個 seeded pick-and-place 回合，逐狀態驗證你的 IK 與 FK。</p>
+
+  <h3>狀態機</h3>
+  <pre class="ttl">MOVE_TO_PREPICK → DESCEND_TO_PICK → GRASP → LIFT
+    → MOVE_TO_PREPLACE → DESCEND_TO_PLACE → RELEASE → RETREAT
+    → VERIFY → SUCCESS / FAILURE</pre>
+
+  <h3>每個運動狀態的雙重驗證</h3>
+  <div class="tablewrap"><table>
+    <thead><tr><th>驗證</th><th>機制</th><th>失敗訊息</th></tr></thead>
+    <tbody>
+      <tr><td><strong>IK 驗證</strong></td><td>目標 pose 由 <code>your_ik</code> 求解 → position control 執行 → 實際 EE 位置須在指令 3 cm 內</td><td><code>IK_MISS in &lt;STATE&gt;</code></td></tr>
+      <tr><td><strong>FK 驗證</strong></td><td><code>your_fk</code> 代入<strong>量測到的關節角</strong>，與模擬器 EE 位置比對須在 1 cm 內——運動學模型逐狀態對照物理</td><td><code>FK_MISMATCH in &lt;STATE&gt;</code></td></tr>
+      <tr><td>抓取／放置</td><td><code>DESCEND_TO_PICK</code> 逐步下降至吸盤回報接觸；<code>GRASP/RELEASE</code> 切換吸附約束；<code>VERIFY</code> 要求積木落在目標 6 cm 內</td><td><code>NO_CONTACT</code>／<code>GRASP_FAILED</code>／<code>PLACE_MISS</code></td></tr>
+    </tbody>
+  </table></div>
 
   <h3>過程</h3>
   <ol class="steps">
-    <li>下載 <code>block-insertion-easy-test/</code> 資料集與 <code>checkpoints/</code> 至 <code>ravens/</code>。</li>
-    <li><code>ravens/test.py</code> 以 <code>your_ik</code> 執行 10 個測試回合（<code>movep → solve_ik → your_ik</code>）。</li>
-    <li>預期輸出：<code>Total Reward: 1.0 Done: True</code> × 10。</li>
+    <li><code>python fsm_task.py</code>（加 <code>-g</code> 開 GUI 觀看）——不需下載任何資料集或 checkpoint。</li>
+    <li>10 個 seeded 回合：積木與目標位置由亂數種子決定、皆落在 Task 1/2 測資已覆蓋的工作區內；大幅移動採 warm-start 重解（同 Task 2 連續軌跡的收斂方式）。</li>
+    <li>預期輸出：<code>Episode k/10 | SUCCESS</code> × 10 → <code>Total Score : 10.000 / 10.000</code>；失敗會指名<strong>是哪個狀態、什麼原因</strong>——FSM 把「運動學壞在管線何處」定位出來。</li>
   </ol>
   <p class="note">Task 3 不做 grounding——語意層（Task 4）聚焦在 FK/IK 的<strong>執行過程</strong>資料。</p>
 </section>
 
 
+
 <!-- ================================================================ -->
 <section id="t4">
   <div class="task-eyebrow">TASK 4</div>
-  <h2>Semantic Grounding（REUSE）＋ Reasoning ＋ SHACL 驗證</h2>
-  <p class="sec-intro">把 FK/IK 的<strong>執行過程數值</strong>帶進語意空間，再讓語意層自己找出哪裡出了問題。學生實作三件事：<strong>grounding、reasoning、SHACL</strong>。</p>
+  <h2>Semantic Grounding（REUSE）＋ SHACL 驗證</h2>
+  <p class="sec-intro">把 FK/IK 的<strong>執行過程數值</strong>帶進語意空間，再讓語意層自己找出哪裡出了問題。學生實作兩件事：<strong>grounding 與 SHACL</strong>。</p>
 
   <h3>學生實作項目</h3>
   <div class="tablewrap"><table>
     <thead><tr><th>實作</th><th>檔案（含 worked example）</th><th>產物</th></tr></thead>
     <tbody>
       <tr><td>① <strong>Grounding</strong>——ontology API 函式，REUSE 標準本體把執行資料轉成語意資料</td><td><code>ground_execution.py</code>：<code>fk_computation_to_triples</code> 為範例；TODO = <code>robot_spec_to_triples</code>、<code>ik_computation_to_triples</code></td><td><code>output/data.ttl</code></td></tr>
-      <tr><td>② <strong>Reasoning</strong>——OWL 等價公理，評估類成員全由推理導出、絕不手動 assert</td><td><code>reasoning.ttl</code>：<code>SolvedIKComputation</code> 為範例；TODO = <code>OutOfReachIKComputation</code></td><td><code>output/inferred.ttl</code></td></tr>
-      <tr><td>③ <strong>SHACL</strong>——驗證 shapes，從數值發現執行過程的問題狀態</td><td><code>shapes.ttl</code>：FK 準確度 shape 為範例；TODO = <code>ARM_OUT_OF_RANGE</code>（distance ≤ 0.90）、<code>NO_CONVERGENCE</code>（residual ≤ 0.02）</td><td><code>output/validation.ttl</code></td></tr>
+      <tr><td>② <strong>SHACL</strong>——驗證 shapes，從數值發現執行過程的問題狀態</td><td><code>shapes.ttl</code>：FK 準確度 shape 為範例；TODO = <code>ARM_OUT_OF_RANGE</code>（distance ≤ 0.90）、<code>NO_CONVERGENCE</code>（residual ≤ 0.02）</td><td><code>output/validation.ttl</code></td></tr>
     </tbody>
   </table></div>
 
-  <h3>過程（run_task4.sh，六步）</h3>
+  <h3>過程（run_task4.sh，五步）</h3>
   <ol class="steps">
-    <li>工具鏈檢查 ＋ 準備 Apache Jena（<code>shacl</code> CLI 做驗證、rule engine 做 OWL 推理）。</li>
+    <li>工具鏈檢查 ＋ 準備 Apache Jena（<code>shacl</code> CLI 做驗證）。</li>
     <li><strong>Grounding</strong>：跑 <code>your_fk</code>（3 筆測資 vs GT）與 <code>your_ik</code>（near / mid / far 三個固定目標）→ <code>data.ttl</code>（含 <code>hasTargetDistance</code>、結構化 JointConfiguration）。</li>
-    <li><strong>Reasoning</strong>：OWL reasoner 載入本體＋你的公理＋資料 → <code>inferred.ttl</code>。預期推導：<code>SolvedIK = {near}</code>、<code>OutOfReach = {mid, far}</code>。</li>
-    <li><strong>SHACL × 3</strong>：你的 shapes 驗自己的 data → <code>validation.ttl</code>；TA 完整 shapes（<code>ta-shapes-full.ttl</code>）驗你的 data；你的 shapes 驗<strong>助教提供的有問題執行過程</strong>（<code>ta-faulty-execution.ttl</code>）。</li>
-    <li>評分：<code>score_semantic.py</code> 解析三份報告與推理圖 → 30 分。</li>
+    <li><strong>SHACL × 3</strong>：你的 shapes 驗自己的 data → <code>validation.ttl</code>；TA 完整 shapes（<code>ta-shapes-full.ttl</code>）驗你的 data；你的 shapes 驗<strong>助教提供的 24 筆執行紀錄資料集</strong>（<code>ta-faulty-execution.ttl</code>），結果逐筆與標準答案 <code>ta-answer-key.json</code> 比對。</li>
+    <li>評分：<code>score_semantic.py</code> 解析三份驗證報告 → 30 分。</li>
   </ol>
 
-  <h3>TA 的有問題執行過程（你的 shapes 必須驗出來）</h3>
+  <h3>TA 資料集 ＋ 標準答案（你的驗證結果必須與答案逐筆一致）</h3>
   <div class="tablewrap"><table>
-    <thead><tr><th>案例</th><th>植入的問題</th><th>你的 shapes 應回報</th></tr></thead>
+    <thead><tr><th>組成</th><th>筆數</th><th>標準答案（<code>ta-answer-key.json</code>）</th></tr></thead>
     <tbody>
-      <tr><td><code>probe:ik_good</code></td><td>無（正常案例）</td><td><strong>零違規</strong>（誤報會扣分）</td></tr>
-      <tr><td><code>probe:ik_out_of_range</code></td><td>目標距離 1.42 m（超出 0.90 m）</td><td><code>ARM_OUT_OF_RANGE</code></td></tr>
-      <tr><td><code>probe:ik_no_convergence</code></td><td>殘差 0.15 m（超過 0.02）</td><td><code>NO_CONVERGENCE</code></td></tr>
-      <tr><td><code>probe:fk_bad</code></td><td>FK pose 誤差 0.031 m（超過 0.005）</td><td><code>FK_INACCURATE</code></td></tr>
+      <tr><td>乾淨 IK（含距離恰 0.90 m、殘差恰 0.02 m 的<strong>邊界案例</strong>）</td><td>8</td><td>零旗標（誤報即該筆不算對）</td></tr>
+      <tr><td>超出範圍 IK（含 0.901 m 剛過門檻）</td><td>2</td><td><code>ARM_OUT_OF_RANGE</code></td></tr>
+      <tr><td>未收斂 IK（含 0.0201 m 剛過門檻）</td><td>3</td><td><code>NO_CONVERGENCE</code></td></tr>
+      <tr><td>兩者皆有的 IK</td><td>3</td><td>兩個旗標都要，缺一即錯</td></tr>
+      <tr><td>乾淨 FK（含 pose error 恰 0.005 的邊界案例）</td><td>5</td><td>零旗標</td></tr>
+      <tr><td>不準 FK（含 0.0051 剛過門檻）</td><td>3</td><td><code>FK_INACCURATE</code></td></tr>
     </tbody>
   </table></div>
+  <p class="note">共 24 筆（11 筆有問題、13 筆乾淨），逐筆比對、旗標集合須與答案<strong>完全一致</strong>。門檻要用 <code>sh:maxInclusive</code>（含等於）——資料集裡有恰等於 0.90／0.02／0.005 的案例，它們是<strong>合格</strong>的；寫錯會在評分報告看到 <code>expected [...] , got [...]</code> 指出錯在哪幾筆。</p>
 
   <div class="derived">
-    <span class="tag">分工原則（評分也依此設計）</span>
-    <p><strong>OWL 推理符號</strong>：狀態字串 → 概念分類（equivalentClass ＋ hasValue，成員推導而非 assert）；<strong>SHACL 驗證數值</strong>：門檻檢查（reach 0.90 m／residual 0.02 m／pose error 0.005 m）＋ 結構檢查——OWL 不能比較數值，這正是兩層並存的原因。TA 完整版 <code>ta-shapes-full.ttl</code> 另含 STRUCTURE 結構檢查與 SHACL-SPARQL 關節限位交叉檢查，作為自動評分依據。</p>
+    <span class="tag">設計原則（評分也依此設計）</span>
+    <p><strong>SHACL 直接驗證數值</strong>：門檻檢查（reach 0.90 m／residual 0.02 m／pose error 0.005 m）以宣告式 constraints 表達，取代手寫驗證程式。TA 完整版 <code>ta-shapes-full.ttl</code> 另含 STRUCTURE 結構檢查（REUSE 正確性）與 SHACL-SPARQL 關節限位交叉檢查，作為自動評分依據。</p>
   </div>
 
   <div class="derived" style="margin-top:18px">
     <span class="tag">評分（Task 4 · 30 分）</span>
-    <p>S1 grounding 結構（TA STRUCTURE shapes 零違規，10）· S2 推理成員正確（SolvedIK={near}、OutOfReach={mid,far}，6）· S3 自己資料的問題偵測（mid/far 標旗、near 乾淨、零限位違規，6）· S4 你的 shapes 驗 TA faulty trace（四案例全對，8）。</p>
+    <p>S1 grounding 結構（TA STRUCTURE shapes 零違規，12）· S2 自己資料的問題偵測（mid/far 標旗、near 乾淨、零限位違規，8）· S3 你的 shapes 驗 TA 24 筆資料集、逐筆對答案（偵測 8 分 ＋ 不誤報 2 分，按答對比例給分）。</p>
   </div>
 </section>
 

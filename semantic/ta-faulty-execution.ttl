@@ -3,28 +3,107 @@
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
 
 # =============================================================================
-# TA-provided FAULTY IK/FK execution trace (grading; do not modify)
+# TA-provided IK/FK execution trace dataset (grading; do not modify)
 #
-# 助教給的一段「有問題」的執行過程資料 —— 你的 shapes.ttl 必須能驗出其中的
-# 問題狀態:
-#   probe:fk_bad            — FK pose 誤差 0.031 m -> FK_INACCURATE
-#   probe:ik_good           — 一切正常            -> 不得回報任何違規
-#   probe:ik_out_of_range   — 目標距離 1.42 m     -> ARM_OUT_OF_RANGE
-#   probe:ik_no_convergence — 殘差 0.15 m         -> NO_CONVERGENCE
+# 24 筆執行紀錄, 好壞混合、含門檻邊界值。你的 shapes.ttl 對本檔的驗證結果
+# 必須與 ta-answer-key.json 的標準答案「逐筆完全一致」(不多報、不漏報)
+# 才算寫對 —— score_semantic.py 逐案比對。
+# 邊界語意: 門檻是「含」(sh:maxInclusive) —— 恰等於 0.90 / 0.02 / 0.005 合格。
 # =============================================================================
 
-probe:fk_bad a hw3:FKComputation ;
+probe:ik_case_01 a hw3:IKComputation ;
+    hw3:hasTargetDistance "0.45"^^xsd:double ;
+    hw3:hasResidual "0.001"^^xsd:double .
+
+probe:ik_case_02 a hw3:IKComputation ;
+    hw3:hasTargetDistance "0.62"^^xsd:double ;
+    hw3:hasResidual "0.008"^^xsd:double .
+
+probe:ik_case_03 a hw3:IKComputation ;
+    hw3:hasTargetDistance "0.3"^^xsd:double ;
+    hw3:hasResidual "0.0005"^^xsd:double .
+
+probe:ik_case_04 a hw3:IKComputation ;
+    hw3:hasTargetDistance "0.75"^^xsd:double ;
+    hw3:hasResidual "0.015"^^xsd:double .
+
+probe:ik_case_05 a hw3:IKComputation ;
+    hw3:hasTargetDistance "0.9"^^xsd:double ;
+    hw3:hasResidual "0.02"^^xsd:double .
+
+probe:ik_case_06 a hw3:IKComputation ;
+    hw3:hasTargetDistance "0.55"^^xsd:double ;
+    hw3:hasResidual "0.019"^^xsd:double .
+
+probe:ik_case_07 a hw3:IKComputation ;
+    hw3:hasTargetDistance "0.68"^^xsd:double ;
+    hw3:hasResidual "0.0002"^^xsd:double .
+
+probe:ik_case_08 a hw3:IKComputation ;
+    hw3:hasTargetDistance "0.82"^^xsd:double ;
+    hw3:hasResidual "0.011"^^xsd:double .
+
+probe:ik_case_09 a hw3:IKComputation ;
+    hw3:hasTargetDistance "0.901"^^xsd:double ;
+    hw3:hasResidual "0.004"^^xsd:double .
+
+probe:ik_case_10 a hw3:IKComputation ;
+    hw3:hasTargetDistance "1.42"^^xsd:double ;
+    hw3:hasResidual "0.012"^^xsd:double .
+
+probe:ik_case_11 a hw3:IKComputation ;
+    hw3:hasTargetDistance "0.6"^^xsd:double ;
+    hw3:hasResidual "0.0201"^^xsd:double .
+
+probe:ik_case_12 a hw3:IKComputation ;
+    hw3:hasTargetDistance "0.72"^^xsd:double ;
+    hw3:hasResidual "0.15"^^xsd:double .
+
+probe:ik_case_13 a hw3:IKComputation ;
+    hw3:hasTargetDistance "0.85"^^xsd:double ;
+    hw3:hasResidual "0.05"^^xsd:double .
+
+probe:ik_case_14 a hw3:IKComputation ;
+    hw3:hasTargetDistance "1.1"^^xsd:double ;
+    hw3:hasResidual "0.61"^^xsd:double .
+
+probe:ik_case_15 a hw3:IKComputation ;
+    hw3:hasTargetDistance "2.05"^^xsd:double ;
+    hw3:hasResidual "1.95"^^xsd:double .
+
+probe:ik_case_16 a hw3:IKComputation ;
+    hw3:hasTargetDistance "0.95"^^xsd:double ;
+    hw3:hasResidual "0.3"^^xsd:double .
+
+probe:fk_case_01 a hw3:FKComputation ;
+    hw3:hasPoseError "0.0006"^^xsd:double ;
+    hw3:hasJacobianError "0.0003"^^xsd:double .
+
+probe:fk_case_02 a hw3:FKComputation ;
+    hw3:hasPoseError "0.001"^^xsd:double ;
+    hw3:hasJacobianError "0.002"^^xsd:double .
+
+probe:fk_case_03 a hw3:FKComputation ;
+    hw3:hasPoseError "0.0049"^^xsd:double ;
+    hw3:hasJacobianError "0.01"^^xsd:double .
+
+probe:fk_case_04 a hw3:FKComputation ;
+    hw3:hasPoseError "0.005"^^xsd:double ;
+    hw3:hasJacobianError "0.004"^^xsd:double .
+
+probe:fk_case_05 a hw3:FKComputation ;
+    hw3:hasPoseError "0.003"^^xsd:double ;
+    hw3:hasJacobianError "0.0008"^^xsd:double .
+
+probe:fk_case_06 a hw3:FKComputation ;
+    hw3:hasPoseError "0.0051"^^xsd:double ;
+    hw3:hasJacobianError "0.006"^^xsd:double .
+
+probe:fk_case_07 a hw3:FKComputation ;
     hw3:hasPoseError "0.031"^^xsd:double ;
     hw3:hasJacobianError "0.12"^^xsd:double .
 
-probe:ik_good a hw3:IKComputation ;
-    hw3:hasTargetDistance "0.55"^^xsd:double ;
-    hw3:hasResidual "0.0008"^^xsd:double .
+probe:fk_case_08 a hw3:FKComputation ;
+    hw3:hasPoseError "0.12"^^xsd:double ;
+    hw3:hasJacobianError "0.35"^^xsd:double .
 
-probe:ik_out_of_range a hw3:IKComputation ;
-    hw3:hasTargetDistance "1.42"^^xsd:double ;
-    hw3:hasResidual "0.61"^^xsd:double .
-
-probe:ik_no_convergence a hw3:IKComputation ;
-    hw3:hasTargetDistance "0.72"^^xsd:double ;
-    hw3:hasResidual "0.15"^^xsd:double .
