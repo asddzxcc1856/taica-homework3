@@ -5,22 +5,23 @@
 # =============================================================================
 # Task 4 / SHACL — validate your grounded execution data (output/data.ttl)
 #
-# SHACL shapes 直接讀 grounding 出來的「數值」,發現 IK/FK 執行過程的問題狀態。
-# run_task4.sh 會用 Jena 的 shacl CLI 執行:
+# SHACL shapes read grounded numeric values directly to discover execution
+# issues in IK/FK. run_task4.sh invokes Jena's shacl CLI:
 #     shacl validate --shapes shapes.ttl --data output/data.ttl
 #     -> output/validation.ttl   (SHACL validation report, Turtle)
 #
-# 評分會 (1) 用 TA 完整版 ta-shapes-full.ttl 驗你的 data.ttl,
-#        (2) 用「你的」shapes.ttl 驗 TA 提供的 24 筆執行紀錄
-#            (ta-faulty-execution.ttl, 好壞混合、含門檻邊界值),
-#            驗證結果逐筆與標準答案 ta-answer-key.json 比對,
-#            每筆的旗標必須「完全一致」(不多報、不漏報) 才得分。
-# 所以 sh:message 的字首必須照下面規定寫,評分程式靠字首辨識;
-# 門檻語意必須用 sh:maxInclusive (含等於) —— 答案集內含恰等於門檻的案例。
+# Grading (1) uses the full TA shapes in ta-shapes-full.ttl to validate your
+# data.ttl, and (2) uses your shapes.ttl against the TA's mixed 24-record
+# execution dataset (ta-faulty-execution.ttl, including boundary values).
+# Each record's flags must exactly match ta-answer-key.json: no false positives
+# and no false negatives. The scorer identifies flags by sh:message prefix;
+# use the required prefixes below. Thresholds must use sh:maxInclusive because
+# the dataset includes values exactly equal to a threshold.
 # =============================================================================
 
 # ---- Worked example (already implemented): FK accuracy check ----------------
-# FK 計算的 pose 誤差必須在課程門檻 0.005 m 內,否則回報 FK_INACCURATE。
+# FK pose error must not exceed the 0.005 m course threshold; otherwise report
+# FK_INACCURATE.
 hw3:FKAccuracyShape a sh:NodeShape ;
     sh:targetClass hw3:FKComputation ;
     sh:property [
@@ -30,10 +31,10 @@ hw3:FKAccuracyShape a sh:NodeShape ;
     ] .
 
 # ---- STUDENT TODO 1: arm out of range ---------------------------------------
-# 寫一個 sh:NodeShape,targetClass hw3:IKComputation:
-#   hw3:hasTargetDistance 必須 <= 0.90 (UR5 reach, meters),
-#   違反時 sh:message 必須以 "ARM_OUT_OF_RANGE:" 開頭。
-# (模仿上面 worked example 的寫法,換 path / 門檻 / message 即可)
+# Write a sh:NodeShape targeted at hw3:IKComputation:
+#   hw3:hasTargetDistance must be <= 0.90 (UR5 reach, in metres).
+#   On violation, sh:message must begin with "ARM_OUT_OF_RANGE:".
+# Follow the worked example above; change the path, threshold, and message.
 
 # ------------------------- your shape ----------------------------------------
 
@@ -42,9 +43,9 @@ hw3:FKAccuracyShape a sh:NodeShape ;
 # -----------------------------------------------------------------------------
 
 # ---- STUDENT TODO 2: not converged ------------------------------------------
-# 寫一個 sh:NodeShape,targetClass hw3:IKComputation:
-#   hw3:hasResidual 必須 <= 0.02 (course threshold, meters),
-#   違反時 sh:message 必須以 "NO_CONVERGENCE:" 開頭。
+# Write a sh:NodeShape targeted at hw3:IKComputation:
+#   hw3:hasResidual must be <= 0.02 (course threshold, in metres).
+#   On violation, sh:message must begin with "NO_CONVERGENCE:".
 
 # ------------------------- your shape ----------------------------------------
 

@@ -5,10 +5,12 @@
 # =============================================================================
 # TA-provided IK/FK execution trace dataset (grading; do not modify)
 #
-# 24 筆執行紀錄, 好壞混合、含門檻邊界值。你的 shapes.ttl 對本檔的驗證結果
-# 必須與 ta-answer-key.json 的標準答案「逐筆完全一致」(不多報、不漏報)
-# 才算寫對 —— score_semantic.py 逐案比對。
-# 邊界語意: 門檻是「含」(sh:maxInclusive) —— 恰等於 0.90 / 0.02 / 0.005 合格。
+# Twenty-four execution records, including both clean and faulty cases and
+# threshold-boundary values. Validation of this file using your shapes.ttl must
+# match ta-answer-key.json exactly for every record: no false positives or
+# false negatives. score_semantic.py compares cases individually.
+# Thresholds are inclusive (sh:maxInclusive): values exactly equal to
+# 0.90 / 0.02 / 0.005 conform.
 # =============================================================================
 
 probe:ik_case_01 a hw3:IKComputation ;

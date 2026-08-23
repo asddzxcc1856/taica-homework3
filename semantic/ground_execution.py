@@ -1,17 +1,18 @@
 # -*- coding: utf-8 -*-
 """Task 4 / REUSE — Ground your FK/IK execution process into semantic data.
 
-把 Task 1 (FK) 與 Task 2 (IK) 的「執行過程資訊」轉進語意空間:
-REUSE 既有標準本體 (IEEE 1872 CORA robots, SOMA joints/joint-states/poses,
-IEEE 1872 POS positions, QUDT units — 存根都在 ontology/hw3-ontology.ttl),
-把數值轉成結構化 RDF -> semantic/output/data.ttl。
+Move the execution data from Task 1 (FK) and Task 2 (IK) into a semantic
+representation. Reuse standard ontologies (IEEE 1872 CORA robots, SOMA
+joints/joint-states/poses, IEEE 1872 POS positions, and QUDT units; local
+stubs are in ontology/hw3-ontology.ttl), and serialize numeric results as
+structured RDF in semantic/output/data.ttl.
 
-之後 SHACL 驗證 (shapes.ttl) 會直接讀這份 data.ttl,從數值中發現
-執行過程的問題狀態 (ARM_OUT_OF_RANGE / NO_CONVERGENCE)。
+SHACL validation (shapes.ttl) reads this data.ttl directly and discovers
+execution issues from the numeric values (ARM_OUT_OF_RANGE / NO_CONVERGENCE).
 
 STUDENT TODO in this file:
-    robot_spec_to_triples()      — 機器人規格 grounding
-    ik_computation_to_triples()  — IK 執行結果 grounding
+    robot_spec_to_triples()      — grounds the robot specification
+    ik_computation_to_triples()  — grounds an IK execution result
 (fk_computation_to_triples() is fully implemented as the worked example.)
 
 Run (inside the taica-hw3 conda environment):
@@ -121,7 +122,7 @@ def ik_computation_to_triples(target_uri, joint_config, ik_status, residual,
       - hw3:hasIKStatus         "SOLVED" / "OUT_OF_REACH" / ... (string)
       - hw3:hasResidual         residual ("..."^^xsd:double)
       - hw3:hasTargetDistance   target_distance ("..."^^xsd:double)
-                                — SHACL 的 reach 檢查讀這個欄位
+                                — read by the SHACL reach check
       - hw3:hasJointConfiguration  a STRUCTURED hw3:JointConfiguration node
                                 (6x soma:JointState via
                                 common.joint_config_to_ttl)

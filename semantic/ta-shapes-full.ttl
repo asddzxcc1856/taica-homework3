@@ -8,14 +8,15 @@
 # =============================================================================
 # TA COMPLETE SHACL SHAPES (grading; do not modify)
 #
-# 兩組 shapes:
-#   STRUCTURE:* — 你的 grounding (data.ttl) 必須符合的結構約束
-#                 (REUSE 的正確性: 類型、必要屬性、xsd:double、6 個 JointState)
-#   問題偵測    — 從數值發現執行過程的問題狀態:
+# Two shape groups:
+#   STRUCTURE:* — structural constraints that your grounded data.ttl must meet
+#                 (correct REUSE types, required properties, xsd:double values,
+#                 and six JointState instances).
+#   Problem detection — discovers execution issues from numeric values:
 #                 ARM_OUT_OF_RANGE / NO_CONVERGENCE / JOINT_LIMIT_VIOLATION
 #
-# run_task4.sh 會用本檔驗證 output/data.ttl -> output/ta-validation.ttl,
-# score_semantic.py 依 message 字首評分。
+# run_task4.sh validates output/data.ttl with this file and writes
+# output/ta-validation.ttl. score_semantic.py grades message prefixes.
 # =============================================================================
 
 # ---------------------------------------------------------------------------
@@ -180,7 +181,7 @@ hw3:TA_PoseShape a sh:NodeShape ;
     ] .
 
 # ---------------------------------------------------------------------------
-# 問題偵測 — 與學生 shapes.ttl 相同的兩個核心檢查
+# Problem detection — the same two core checks required in student shapes.ttl
 # ---------------------------------------------------------------------------
 hw3:TA_FKAccuracyShape a sh:NodeShape ;
     sh:targetClass hw3:FKComputation ;
@@ -207,9 +208,10 @@ hw3:TA_NoConvergenceShape a sh:NodeShape ;
     ] .
 
 # ---------------------------------------------------------------------------
-# 問題偵測 (SHACL-SPARQL) — 關節角超出該關節的限位
-# 比較「JointState 的角度」與「其關節個體的上下限」— 跨節點的數值比較,
-# SHACL core 做不到,用 SPARQL constraint。
+# Problem detection (SHACL-SPARQL) — joint angle outside its joint limits.
+# This compares a JointState angle with its joint instance's lower and upper
+# limits. SHACL Core cannot perform this cross-node numeric comparison, so a
+# SPARQL constraint is used.
 # ---------------------------------------------------------------------------
 hw3:TA_Prefixes sh:declare
     [ sh:prefix "hw3" ;  sh:namespace "http://taica.course/hw3/ontology#"^^xsd:anyURI ] ,

@@ -4,21 +4,20 @@
 Total 30 points — grounding + SHACL:
 
     S1 REUSE grounding structure ............... 12 pts
-       ta-shapes-full.ttl 的 STRUCTURE:* shapes 對 output/data.ttl
-       零違規 -> 滿分 (每個違規 -2)
+       STRUCTURE:* shapes from ta-shapes-full.ttl validate output/data.ttl
+       Zero violations earns full credit (each violation costs 2 points).
     S2 Problem detection on YOUR data .......... 8 pts
-       TA problem shapes 在你的 data.ttl 上:
-       - target_mid / target_far 被標 ARM_OUT_OF_RANGE (各 +2)
-       - target_near 沒有任何問題旗標 (+2)
-       - 零 JOINT_LIMIT_VIOLATION (+2)
+       TA problem shapes validate your data.ttl:
+       - target_mid / target_far are flagged ARM_OUT_OF_RANGE (+2 each)
+       - target_near has no problem flag (+2)
+       - no JOINT_LIMIT_VIOLATION (+2)
     S3 YOUR shapes.ttl vs TA dataset + answer key  10 pts
-       用「你的」shapes.ttl 驗證助教提供的 24 筆執行紀錄
-       (ta-faulty-execution.ttl)，逐筆與標準答案
-       (ta-answer-key.json) 比對：每一筆的旗標集合必須與
-       答案「完全一致」——不多報 (false positive)、
-       不漏報 (false negative)——該筆才算對。
-       得分 = 8 ×(答對的「有問題案例」/ 全部有問題案例)
-            + 2 ×(答對的「乾淨案例」  / 全部乾淨案例)。
+       Your shapes.ttl validates the TA-provided 24-record execution dataset
+       (ta-faulty-execution.ttl). Each record's flag set must match the
+       answer key (ta-answer-key.json) exactly: no false positives and no
+       false negatives.
+       Score = 8 × (correct faulty cases / all faulty cases)
+             + 2 × (correct clean cases / all clean cases).
 
 Invoked automatically by STEP 5 of run_task4.sh.
 """
@@ -105,7 +104,7 @@ def main():
     else:
         with open(key_path) as f:
             answer_key = json.load(f)
-        # 學生報告 -> 每筆案例實際觸發的旗標集合 (取 message 冒號前的前綴)
+        # Student report: collect each case's flag set from message prefixes.
         found = {case: set() for case in answer_key}
         for focus, msg in probe:
             prefix = msg.split(':')[0].strip()
