@@ -2,10 +2,10 @@
 
 NYCU Physical AI / TAICA — UR5 Kinematics + FSM Manipulation + Semantic Knowledge Graph
 
-> 圖文版學生引導手冊（任務流程、語意定義、每個欄位的下游用途、練習引導）:
-> 在瀏覽器開啟 [docs/hw3-student-guide.html](docs/hw3-student-guide.html)
+> **Student Guide** — Covers the task workflow, semantic definitions, downstream usage of each field, and guided exercises:
+> Open [docs/hw3-student-guide.html](docs/hw3-student-guide.html) in your browser.
 >
-> 正式規格書（作業目標、安裝每一步驟、各任務步驟細節、評分規則）: [SPEC.md](SPEC.md)
+> **Official Specification** — Covers the assignment objectives, step-by-step installation instructions, detailed task procedures, and grading criteria: [SPEC.md](SPEC.md)
 
 ## Learning Objectives
 
