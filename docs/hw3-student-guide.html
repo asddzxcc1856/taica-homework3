@@ -1,474 +1,558 @@
-<title>HW3 學生引導手冊</title>
-<style>
-  :root {
-    --bg: #F5F7F8;
-    --surface: #FFFFFF;
-    --ink: #1C2833;
-    --muted: #5C7183;
-    --accent: #0F7D9F;
-    --accent-soft: #E3F0F5;
-    --derived: #A3690F;
-    --derived-soft: #F7EEDD;
-    --line: #DCE4E9;
-    --code-bg: #F0F4F6;
-    --chip-outline: #B9C7D1;
-  }
-  @media (prefers-color-scheme: dark) {
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description"
+    content="Student guide for NYCU Physical AI Homework 3: robot manipulation and semantic robot knowledge.">
+  <title>HW3 Student Guide | Robot Manipulation</title>
+  <style>
     :root {
-      --bg: #0F161C;
-      --surface: #161F28;
-      --ink: #D9E5EF;
-      --muted: #8CA1B3;
-      --accent: #4EC0E4;
-      --accent-soft: #14313D;
-      --derived: #E2A957;
-      --derived-soft: #33270F;
-      --line: #253442;
-      --code-bg: #121B23;
-      --chip-outline: #3A4C5B;
+      color-scheme: light dark;
+      --bg: #f5f7f8;
+      --surface: #fff;
+      --ink: #1c2833;
+      --muted: #5c7183;
+      --accent: #0f7d9f;
+      --accent-soft: #e3f0f5;
+      --warning: #9b6715;
+      --warning-soft: #fbf3e4;
+      --line: #dce4e9;
+      --code-bg: #f0f4f6;
     }
-  }
-  :root[data-theme="dark"] {
-    --bg: #0F161C; --surface: #161F28; --ink: #D9E5EF; --muted: #8CA1B3;
-    --accent: #4EC0E4; --accent-soft: #14313D; --derived: #E2A957;
-    --derived-soft: #33270F; --line: #253442; --code-bg: #121B23;
-    --chip-outline: #3A4C5B;
-  }
-  :root[data-theme="light"] {
-    --bg: #F5F7F8; --surface: #FFFFFF; --ink: #1C2833; --muted: #5C7183;
-    --accent: #0F7D9F; --accent-soft: #E3F0F5; --derived: #A3690F;
-    --derived-soft: #F7EEDD; --line: #DCE4E9; --code-bg: #F0F4F6;
-    --chip-outline: #B9C7D1;
-  }
 
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ink);
-    font-family: "Avenir Next", "Segoe UI", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif;
-    font-size: 15px;
-    line-height: 1.75;
-  }
-  .wrap { max-width: 920px; margin: 0 auto; padding: 0 24px 96px; }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f161c;
+        --surface: #161f28;
+        --ink: #d9e5ef;
+        --muted: #9aafc0;
+        --accent: #55c3e5;
+        --accent-soft: #14313d;
+        --warning: #e8b35e;
+        --warning-soft: #34290f;
+        --line: #2a3b48;
+        --code-bg: #111a22;
+      }
+    }
 
-  header.masthead { padding: 56px 0 8px; }
-  .eyebrow {
-    font-size: 12px; letter-spacing: .14em; text-transform: uppercase;
-    color: var(--accent); font-weight: 600;
-  }
-  h1 {
-    font-size: 30px; line-height: 1.3; margin: 8px 0 10px;
-    letter-spacing: .01em; text-wrap: balance;
-  }
-  .lede { color: var(--muted); max-width: 62ch; margin: 0; }
+    * {
+      box-sizing: border-box;
+    }
 
-  nav.toc {
-    position: sticky; top: 0; z-index: 5;
-    background: var(--bg);
-    border-bottom: 1px solid var(--line);
-    margin: 28px -24px 0; padding: 10px 24px;
-    display: flex; gap: 8px; flex-wrap: wrap;
-  }
-  nav.toc a {
-    text-decoration: none; color: var(--muted);
-    font-size: 13px; padding: 3px 12px; border-radius: 999px;
-    border: 1px solid var(--line); background: var(--surface);
-  }
-  nav.toc a:hover { color: var(--accent); border-color: var(--accent); }
+    html {
+      scroll-behavior: smooth;
+    }
 
-  section { margin-top: 64px; scroll-margin-top: 64px; }
-  .task-eyebrow {
-    display: inline-block; font-size: 12px; font-weight: 700;
-    letter-spacing: .12em; color: var(--accent);
-    border-bottom: 2px solid var(--accent);
-    padding-bottom: 2px; margin-bottom: 6px;
-  }
-  h2 { font-size: 22px; margin: 4px 0 8px; text-wrap: balance; }
-  h3 {
-    font-size: 13px; letter-spacing: .1em; text-transform: uppercase;
-    color: var(--muted); margin: 30px 0 10px; font-weight: 700;
-  }
-  p { max-width: 68ch; }
-  .sec-intro { color: var(--muted); max-width: 66ch; margin-top: 0; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.7 "Segoe UI", Inter, Arial, sans-serif;
+    }
 
-  /* 三層架構圖 */
-  .layers { display: flex; flex-direction: column; gap: 0; margin: 26px 0 8px; }
-  .layer {
-    background: var(--surface); border: 1px solid var(--line);
-    border-radius: 8px; padding: 14px 18px;
-    display: flex; gap: 16px; align-items: baseline; flex-wrap: wrap;
-  }
-  .layer strong { font-size: 15px; white-space: nowrap; }
-  .layer span { color: var(--muted); font-size: 13.5px; }
-  .layer-arrow {
-    color: var(--muted); font-size: 12.5px; padding: 4px 0 4px 26px;
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  }
+    .wrap {
+      width: min(920px, calc(100% - 32px));
+      margin: 0 auto;
+      padding-bottom: 72px;
+    }
 
-  /* 流程步驟 */
-  ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 12px 0; max-width: 70ch; }
-  ol.steps li {
-    counter-increment: step; position: relative;
-    padding: 0 0 14px 44px;
-  }
-  ol.steps li::before {
-    content: counter(step);
-    position: absolute; left: 0; top: 2px;
-    width: 26px; height: 26px; border-radius: 50%;
-    background: var(--accent-soft); color: var(--accent);
-    font-size: 13px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-  }
-  ol.steps li:not(:last-child)::after {
-    content: ""; position: absolute; left: 12.5px; top: 32px; bottom: 2px;
-    width: 1px; background: var(--line);
-  }
-  ol.steps code { font-size: 12.5px; }
+    header {
+      padding: 56px 0 20px;
+    }
 
-  /* 表格 */
-  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
-  table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
-  th, td { text-align: left; padding: 9px 14px; border-top: 1px solid var(--line); vertical-align: top; }
-  thead th {
-    border-top: none; font-size: 12px; letter-spacing: .08em;
-    text-transform: uppercase; color: var(--muted); background: transparent;
-  }
-  td.num, th.num { font-variant-numeric: tabular-nums; }
-  td code, li code, p code {
-    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
-    font-size: 12.5px; background: var(--code-bg);
-    padding: 1px 5px; border-radius: 4px;
-  }
+    .eyebrow {
+      color: var(--accent);
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+    }
 
-  /* 來源 chip:標準引用 vs 自創 vs SHACL 偵測 */
-  .chip {
-    display: inline-block; font-size: 11.5px; font-weight: 600;
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    padding: 1px 8px; border-radius: 999px; white-space: nowrap;
-  }
-  .chip.std { background: var(--accent-soft); color: var(--accent); }
-  .chip.mint { background: transparent; color: var(--muted); border: 1px solid var(--chip-outline); }
-  .chip.inf { background: var(--derived-soft); color: var(--derived); }
-  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin: 14px 0 0; }
-  .legend .chip { transform: translateY(1px); }
+    h1 {
+      font-size: clamp(2rem, 5vw, 2.8rem);
+      line-height: 1.15;
+      margin: 10px 0 14px;
+      letter-spacing: -.025em;
+    }
 
-  /* TTL code block */
-  pre.ttl {
-    background: var(--code-bg); border: 1px solid var(--line);
-    border-radius: 8px; padding: 16px 18px; overflow-x: auto;
-    font-family: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
-    font-size: 12.5px; line-height: 1.65; margin: 14px 0;
-  }
-  pre.ttl .c { color: var(--muted); font-style: italic; }
-  pre.ttl .k { color: var(--accent); }
-  .src {
-    font-size: 12px; color: var(--muted); margin: -8px 0 0;
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-  }
+    h2 {
+      font-size: 1.7rem;
+      line-height: 1.25;
+      margin: 0 0 10px;
+    }
 
-  /* 推理導出 callout */
-  .derived {
-    border-left: 3px solid var(--derived);
-    background: var(--derived-soft);
-    border-radius: 0 8px 8px 0;
-    padding: 12px 18px; margin: 18px 0; max-width: 74ch;
-  }
-  .derived .tag {
-    font-size: 11.5px; font-weight: 700; letter-spacing: .1em;
-    text-transform: uppercase; color: var(--derived);
-  }
-  .derived code {
-    background: transparent; padding: 0;
-    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    font-size: 12.5px;
-  }
-  .derived p { margin: 4px 0 0; font-size: 13.5px; }
+    h3 {
+      font-size: .85rem;
+      letter-spacing: .09em;
+      margin: 32px 0 10px;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
 
-  .note { font-size: 13.5px; color: var(--muted); max-width: 70ch; }
+    p {
+      max-width: 76ch;
+    }
 
-  footer {
-    margin-top: 80px; padding-top: 20px; border-top: 1px solid var(--line);
-    font-size: 12.5px; color: var(--muted);
-  }
-  @media (max-width: 640px) {
-    h1 { font-size: 24px; }
-    .wrap { padding: 0 16px 64px; }
-    nav.toc { margin: 24px -16px 0; padding: 10px 16px; }
-  }
-</style>
+    .lede,
+    .intro {
+      color: var(--muted);
+      font-size: 1.06rem;
+    }
 
-<div class="wrap">
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px 0;
+      background: color-mix(in srgb, var(--bg) 94%, transparent);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--line);
+    }
 
-<header class="masthead">
-  <div class="eyebrow">NYCU Physical AI · HW3 Robot Manipulation</div>
-  <h1>HW3 學生引導手冊 — Task 1–4</h1>
-  <p class="lede">UR5 運動學 × FSM 操作管線 × 語意知識圖。本手冊帶你走過四個任務的流程、
-  每一步該 ground 的語意資訊與它的下游用途。全作業使用同一套<strong>結構化表示法</strong>：
-  數值掛在型別化節點上、引用既有機器人本體、不使用 JSON 字串 literal。</p>
-</header>
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      border: 1px solid var(--line);
+      background: var(--surface);
+      border-radius: 999px;
+      padding: 3px 12px;
+      font-size: .84rem;
+    }
 
-<nav class="toc">
-  <a href="#base">共通語意基座</a>
-  <a href="#t1">Task 1 · FK</a>
-  <a href="#t2">Task 2 · IK</a>
-  <a href="#t3">Task 3 · FSM</a>
-  <a href="#t4">Task 4 · Triple Store</a>
-</nav>
+    nav a:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
 
-<!-- ================================================================ -->
-<section id="base">
-  <h2>共通語意基座</h2>
-  <p class="sec-intro">整個作業採三層式架構：數值層產生事實，Grounding 層把事實轉成 RDF，SHACL 驗證層從語意資料中發現執行問題。</p>
+    section {
+      scroll-margin-top: 74px;
+      margin-top: 60px;
+    }
 
-  <div class="layers">
-    <div class="layer"><strong>1 · 數值層</strong><span>fk.py / ik.py / fsm_task.py — 關節角、pose、殘差、回合結果（PyBullet 模擬）</span></div>
-    <div class="layer-arrow">│ Symbol Grounding（ground_task*.py + common.py 序列化 helper）▼</div>
-    <div class="layer"><strong>2 · 語意層</strong><span>hw3-ontology.ttl 共用詞彙 ＋ 你的執行過程知識圖 data.ttl（結構化節點）</span></div>
-    <div class="layer-arrow">│ Jena shacl CLI ▼</div>
-    <div class="layer"><strong>3 · 驗證層</strong><span>SHACL（你的 shapes.ttl ＋ TA 完整版）：從數值發現 ARM_OUT_OF_RANGE / NO_CONVERGENCE / FK_INACCURATE，含 TA 提供的有問題執行過程</span></div>
-  </div>
+    .task {
+      color: var(--accent);
+      font-weight: 800;
+      font-size: .78rem;
+      letter-spacing: .12em;
+    }
 
-  <h3>命名空間</h3>
-  <div class="tablewrap"><table>
-    <thead><tr><th>Prefix</th><th>IRI</th><th>角色</th></tr></thead>
-    <tbody>
-      <tr><td><span class="chip std">cora:</span></td><td><code>purl.org/ieee1872-owl/cora-bare#</code></td><td>IEEE 1872 CORA — 機器人（<code>cora:Robot</code>）</td></tr>
-      <tr><td><span class="chip std">soma:</span></td><td><code>ease-crc.org/ont/SOMA.owl#</code></td><td>SOMA — 關節、關節狀態、6D pose、episode、軌跡</td></tr>
-      <tr><td><span class="chip std">pos:</span></td><td><code>purl.org/ieee1872-owl/pos#</code></td><td>IEEE 1872 POS — Position / Orientation / Pose</td></tr>
-      <tr><td><span class="chip std">dul:</span></td><td><code>ontologydesignpatterns.org/ont/dul/DUL.owl#</code></td><td>DUL 上層本體 — Event / Region / hasComponent 上位對齊</td></tr>
-      <tr><td><span class="chip std">qudt: unit:</span></td><td><code>qudt.org/schema/qudt/</code> · <code>qudt.org/vocab/unit/</code></td><td>QUDT 單位 — <code>unit:M</code>（公尺）、<code>unit:RAD</code>（弧度）</td></tr>
-      <tr><td><span class="chip mint">hw3:</span></td><td><code>taica.course/hw3/ontology#</code></td><td>課程自創詞彙（僅限標準本體沒有的概念）</td></tr>
-      <tr><td><span class="chip mint">stu: / ta:</span></td><td><code>taica.course/hw3/data/&lt;id&gt;#</code></td><td>各程式的資料命名空間（provenance 隔離、免 URI 碰撞）</td></tr>
-    </tbody>
-  </table></div>
+    .callout {
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--warning);
+      border-radius: 10px;
+      background: var(--warning-soft);
+      padding: 18px 20px;
+    }
 
-  <h3>結構化三原則</h3>
-  <ol class="steps">
-    <li><strong>不用 JSON 字串。</strong>Pose 與關節向量是結構化節點：<code>soma:6DPose</code> = <code>pos:Position</code>（x/y/z）＋ <code>hw3:QuaternionOrientation</code>（qx/qy/qz/qw）＋ 參考座標系；關節組態 = <code>hw3:JointConfiguration</code> 聚合 6 個 <code>soma:JointState</code>，每個以 <code>hw3:isStateOfJoint</code> 指回關節個體。</li>
-    <li><strong>數值是型別化 literal、單位是 QUDT IRI。</strong>一律 <code>"..."^^xsd:double</code>（裸浮點會變 xsd:decimal 觸發 range 檢查錯誤）；<code>qudt:hasUnit unit:M / unit:RAD</code>。</li>
-    <li><strong>每個個體帶 <code>hw3:producedBy</code>。</strong>provenance 讓不同來源的圖合併後仍可區分——這是語意資料可交換的基本紀律。</li>
-  </ol>
+    .callout strong {
+      color: var(--warning);
+    }
 
-  <div class="legend">
-    <span><span class="chip std">標準引用</span> 既有本體詞彙（IRI 與官方一致，離線存根）</span>
-    <span><span class="chip mint">hw3: 自創</span> 課程特有概念</span>
-    <span><span class="chip inf">SHACL 偵測</span> 由 shapes 從數值中發現的問題旗標（ARM_OUT_OF_RANGE 等）</span>
-  </div>
-</section>
+    .layers {
+      display: grid;
+      gap: 10px;
+      margin: 22px 0;
+    }
 
-<!-- ================================================================ -->
-<section id="t1">
-  <div class="task-eyebrow">TASK 1</div>
-  <h2>Forward Kinematics — 正向運動學</h2>
-  <p class="sec-intro">實作 <code>your_fk()</code>：classic DH 連乘求 EE pose ＋ 幾何 Jacobian。語意層 ground 兩件事：機器人規格（關節個體＋DH 參數）與每筆測資的評估結果。</p>
+    .layer {
+      display: flex;
+      gap: 16px;
+      align-items: baseline;
+      padding: 13px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--surface);
+    }
 
-  <h3>過程</h3>
-  <ol class="steps">
-    <li>實作 <code>fk.py</code> 的 <code>your_fk(DH_params, q, base_pos)</code>；<code>python fk.py</code> 以 easy / medium / hard 測資評分（pose 誤差門檻 0.005、Jacobian 門檻 0.05，各 10%）。</li>
-    <li><code>semantic/ground_task1_fk.py</code> 對 3 筆 easy 測資執行 <code>your_fk</code>，與 ground truth 比對得 <code>pose_error</code> / <code>jacobian_error</code> → <code>PASS</code> / <code>FAIL</code>。</li>
-    <li>Ground 機器人規格：<code>stu:my_ur5 a cora:Robot</code> ＋ 6 個 <code>soma:RevoluteJoint</code> 個體（DH a/d/α、限位、關節序）。</li>
-    <li>Ground 每筆 FK 評估：輸入關節組態與 EE pose 都是結構化節點 → 輸出 <code>output/task1_fk_graph.ttl</code>。</li>
-  </ol>
+    .layer b {
+      min-width: 140px;
+    }
 
-  <h3>語意定義</h3>
-  <div class="tablewrap"><table>
-    <thead><tr><th>詞彙</th><th>來源</th><th>定義</th></tr></thead>
-    <tbody>
-      <tr><td><code>cora:Robot</code></td><td><span class="chip std">CORA</span></td><td>機器人個體（<code>stu:my_ur5</code>、<code>ta:ta_ur10</code>）</td></tr>
-      <tr><td><code>soma:RevoluteJoint</code></td><td><span class="chip std">SOMA</span></td><td>旋轉關節個體，掛 <code>hw3:jointIndex</code>、<code>hw3:dh_a / dh_d / dh_alpha</code>、上下限位</td></tr>
-      <tr><td><code>hw3:hasJoint</code></td><td><span class="chip mint">hw3:</span></td><td>機器人 → 關節（⊑ <code>dul:hasComponent</code>）</td></tr>
-      <tr><td><code>hw3:FKComputation</code></td><td><span class="chip mint">hw3:</span></td><td>一次 FK 計算（⊑ <code>hw3:KinematicComputation</code> ⊑ <code>dul:Event</code>）</td></tr>
-      <tr><td><code>hw3:hasInputJointConfiguration</code></td><td><span class="chip mint">hw3:</span></td><td>ObjectProperty → <code>hw3:JointConfiguration</code>（6 × <code>soma:JointState</code>）</td></tr>
-      <tr><td><code>hw3:hasEndEffectorPose</code></td><td><span class="chip mint">hw3:</span></td><td>ObjectProperty → <code>soma:6DPose</code>（world frame）</td></tr>
-      <tr><td><code>hw3:hasPoseError / hasJacobianError</code></td><td><span class="chip mint">hw3:</span></td><td>與 GT 的 L2 誤差（<code>xsd:double</code>）——SHACL 的 <code>FK_INACCURATE</code> shape 讀 pose error</td></tr>
-    </tbody>
-  </table></div>
+    .layer span {
+      color: var(--muted);
+      font-size: .94rem;
+    }
 
-  <p class="note"><strong>規格欄位的用途</strong>：DH 與限位由 TA 的 STRUCTURE shapes 驗證完整性（S1 評分）；限位另被 SHACL-SPARQL 的 <code>JOINT_LIMIT_VIOLATION</code> 交叉檢查讀取。</p>
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface);
+    }
 
-  <h3>範例（你的圖應長這樣）</h3>
-  <pre class="ttl"><span class="c"># 機器人規格:關節是 soma:Joint 個體,帶 classic DH 參數</span>
-stu:my_ur5_joint1 <span class="k">a</span> soma:RevoluteJoint ;
-    hw3:jointIndex 1 ;
-    hw3:dh_a "0.0"^^xsd:double ;  hw3:dh_d "0.0892"^^xsd:double ;
-    hw3:dh_alpha "1.570796"^^xsd:double ;
-    hw3:hasJointLowerLimit "-4.712389"^^xsd:double ;
-    hw3:hasJointUpperLimit "-1.570796"^^xsd:double .
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .92rem;
+    }
 
-<span class="c"># 一筆 FK 評估:輸入組態與 EE pose 都是結構化節點</span>
-stu:fk_case_0 <span class="k">a</span> hw3:FKComputation ;
-    hw3:producedBy "313551000" ;
-    hw3:computedForRobot stu:my_ur5 ;
-    hw3:hasInputJointConfiguration stu:fk_case_0_q ;
-    hw3:hasEndEffectorPose stu:fk_case_0_ee ;
-    hw3:hasPoseError "0.000625"^^xsd:double ;
-    hw3:hasJacobianError "0.000316"^^xsd:double .
+    th,
+    td {
+      padding: 10px 14px;
+      text-align: left;
+      vertical-align: top;
+      border-top: 1px solid var(--line);
+    }
 
-stu:fk_case_0_q_js1 <span class="k">a</span> soma:JointState ;          <span class="c"># 之一,共 6 個</span>
-    hw3:isStateOfJoint stu:my_ur5_joint1 ;       <span class="c"># 指回關節個體</span>
-    qudt:hasUnit unit:RAD ;
-    soma:hasJointPosition "-3.154407"^^xsd:double .
+    thead th {
+      border-top: 0;
+      color: var(--muted);
+      font-size: .76rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
 
-stu:fk_case_0_ee <span class="k">a</span> soma:6DPose ;
-    hw3:hasReferenceFrame "world" ;
-    hw3:hasPositionComponent stu:fk_case_0_ee_pos ;
-    hw3:hasOrientationComponent stu:fk_case_0_ee_ori .
-stu:fk_case_0_ee_pos <span class="k">a</span> pos:Position ;
-    qudt:hasUnit unit:M ;
-    hw3:hasPositionX "0.287046"^^xsd:double ;
-    hw3:hasPositionY "0.233046"^^xsd:double ;
-    hw3:hasPositionZ "0.912072"^^xsd:double .</pre>
-  <p class="src">semantic/output/task1_fk_graph.ttl</p>
+    code,
+    pre {
+      font-family: "Cascadia Code", Consolas, monospace;
+    }
 
-  <div class="derived">
-    <span class="tag">SHACL · Task 1 的驗證角色</span>
-    <p>FK 準確度由 shapes.ttl 的 worked example 驗證：<code>hasPoseError ≤ 0.005</code>，違反 → <code>FK_INACCURATE</code>。TA 的有問題執行過程裡有一筆 pose 誤差 0.031 的 FK，你的 shapes 必須抓到它。</p>
-  </div>
-</section>
+    code {
+      padding: 1px 4px;
+      border-radius: 4px;
+      background: var(--code-bg);
+      font-size: .88em;
+    }
 
-<!-- ================================================================ -->
-<section id="t2">
-  <div class="task-eyebrow">TASK 2</div>
-  <h2>Inverse Kinematics — 逆向運動學</h2>
-  <p class="sec-intro">實作 <code>your_ik()</code>：Damped Least Squares 迭代解，靠 <code>your_fk</code> 提供 pose 與 Jacobian。語意層 ground 兩件事：求解狀態與<strong>結構化關節解</strong>。</p>
+    pre {
+      overflow-x: auto;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: var(--code-bg);
+      font-size: .85rem;
+      line-height: 1.55;
+    }
 
-  <h3>過程</h3>
-  <ol class="steps">
-    <li>實作 <code>ik.py</code> 的 <code>your_ik(robot_id, pose, base_pos, ...)</code>；<code>python ik.py</code> 評分（誤差門檻 0.02，40%）。</li>
-    <li><code>semantic/ground_task2_ik.py</code> 對三個<strong>共用目標</strong>（<code>hw3:target_near / target_mid / target_far</code>）呼叫 <code>your_ik</code>。</li>
-    <li>依殘差與工作空間幾何判定狀態：<code>SOLVED</code> / <code>OUT_OF_REACH</code> / <code>NO_CONVERGENCE</code>。</li>
-    <li>結構化 grounding（關節解 = 6 個 <code>soma:JointState</code>）→ <code>output/task2_ik_graph.ttl</code>。</li>
-  </ol>
+    ol,
+    ul {
+      max-width: 78ch;
+      padding-left: 1.35rem;
+    }
 
-  <h3>語意定義</h3>
-  <div class="tablewrap"><table>
-    <thead><tr><th>詞彙</th><th>來源</th><th>定義</th></tr></thead>
-    <tbody>
-      <tr><td><code>soma:6DPose</code>（⊑ <code>pos:Pose</code>, <code>dul:Region</code>）</td><td><span class="chip std">SOMA</span></td><td>共用目標 <code>hw3:target_*</code>：跨圖比較的 join key，座標在 <code>pos:Position</code> 元件節點上</td></tr>
-      <tr><td><code>hw3:IKComputation</code></td><td><span class="chip mint">hw3:</span></td><td>一次 IK 計算（⊑ <code>dul:Event</code>）</td></tr>
-      <tr><td><code>hw3:solvesForTarget</code></td><td><span class="chip mint">hw3:</span></td><td>IK → 目標 pose（⊑ <code>dul:hasRegion</code>）</td></tr>
-      <tr><td><code>hw3:hasIKStatus / hasResidual</code></td><td><span class="chip mint">hw3:</span></td><td>求解狀態字串（數值層判定）、Cartesian 殘差（SHACL <code>NO_CONVERGENCE</code> 的輸入）</td></tr>
-      <tr><td><code>hw3:hasTargetDistance</code></td><td><span class="chip mint">hw3:</span></td><td>目標與肩部的距離（公尺，數值層計算）——SHACL <code>ARM_OUT_OF_RANGE</code> 的輸入</td></tr>
-      <tr><td><code>hw3:hasJointConfiguration</code></td><td><span class="chip mint">hw3:</span></td><td>ObjectProperty → 結構化 <code>hw3:JointConfiguration</code>（每個關節一個 <code>soma:JointState</code>，指回關節個體）</td></tr>
-    </tbody>
-  </table></div>
+    li+li {
+      margin-top: 8px;
+    }
 
-  <h3>範例（你的圖應長這樣）</h3>
-  <pre class="ttl">stu:ik_target_near <span class="k">a</span> hw3:IKComputation ;
-    hw3:producedBy "313551000" ;
-    hw3:computedForRobot stu:my_ur5 ;
-    hw3:solvesForTarget hw3:target_near ;        <span class="c"># 共用 URI = join key</span>
-    hw3:hasIKStatus "SOLVED" ;
-    hw3:hasResidual "0.00053"^^xsd:double ;
-    hw3:hasTargetDistance "0.62691"^^xsd:double ;
-    hw3:hasJointConfiguration stu:ik_target_near_q .
+    .steps {
+      counter-reset: step;
+      list-style: none;
+      padding-left: 0;
+    }
 
-stu:ik_target_near_q_js1 <span class="k">a</span> soma:JointState ;   <span class="c"># 之一,共 6 個</span>
-    hw3:isStateOfJoint stu:my_ur5_joint1 ;      <span class="c"># 指回關節個體</span>
-    qudt:hasUnit unit:RAD ;
-    soma:hasJointPosition "-3.068552"^^xsd:double .</pre>
-  <p class="src">semantic/output/task2_ik_graph.ttl</p>
+    .steps li {
+      counter-increment: step;
+      position: relative;
+      padding-left: 42px;
+    }
 
-  <p class="note"><strong>Grounding 的用途</strong>：結構化 <code>JointState</code> 受 TA STRUCTURE shapes 驗證（每組態恰 6 個、皆為 xsd:double）；距離、殘差與誤差餵 SHACL——同一份執行資料直接支撐宣告式驗證。</p>
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 2px;
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      color: var(--accent);
+      background: var(--accent-soft);
+      text-align: center;
+      line-height: 25px;
+      font-size: .82rem;
+      font-weight: 700;
+    }
 
-  <div class="derived">
-    <span class="tag">SHACL · Task 2 的驗證角色</span>
-    <p><code>hasTargetDistance ≤ 0.90</code> 違反 → <code>ARM_OUT_OF_RANGE</code>；<code>hasResidual ≤ 0.02</code> 違反 → <code>NO_CONVERGENCE</code>——兩個 shape 都是你在 shapes.ttl 要實作的 TODO，直接從 grounding 的數值發現執行問題。</p>
-  </div>
-</section>
+    footer {
+      margin-top: 72px;
+      border-top: 1px solid var(--line);
+      padding-top: 18px;
+      color: var(--muted);
+      font-size: .86rem;
+    }
 
+    @media (max-width:560px) {
+      .layer {
+        display: block;
+      }
 
-<!-- ================================================================ -->
-<section id="t3">
-  <div class="task-eyebrow">TASK 3</div>
-  <h2>FSM Manipulation Pipeline — 有限狀態機操作管線</h2>
-  <p class="sec-intro">不再使用學習模型與 ravens——一個確定性的 <strong>Finite State Machine</strong>（<code>fsm_task.py</code>，TA 提供、無學生 TODO）驅動 UR5 完成 10 個 seeded pick-and-place 回合，逐狀態驗證你的 IK 與 FK。</p>
+      .layer b {
+        display: block;
+        margin-bottom: 4px;
+      }
 
-  <h3>狀態機</h3>
-  <pre class="ttl">MOVE_TO_PREPICK → DESCEND_TO_PICK → GRASP → LIFT
-    → MOVE_TO_PREPLACE → DESCEND_TO_PLACE → RELEASE → RETREAT
-    → VERIFY → SUCCESS / FAILURE</pre>
+      th,
+      td {
+        padding: 9px 10px;
+      }
+    }
+  </style>
+</head>
 
-  <h3>每個運動狀態的雙重驗證</h3>
-  <div class="tablewrap"><table>
-    <thead><tr><th>驗證</th><th>機制</th><th>失敗訊息</th></tr></thead>
-    <tbody>
-      <tr><td><strong>IK 驗證</strong></td><td>目標 pose 由 <code>your_ik</code> 求解 → position control 執行 → 實際 EE 位置須在指令 3 cm 內</td><td><code>IK_MISS in &lt;STATE&gt;</code></td></tr>
-      <tr><td><strong>FK 驗證</strong></td><td><code>your_fk</code> 代入<strong>量測到的關節角</strong>，與模擬器 EE 位置比對須在 1 cm 內——運動學模型逐狀態對照物理</td><td><code>FK_MISMATCH in &lt;STATE&gt;</code></td></tr>
-      <tr><td>抓取／放置</td><td><code>DESCEND_TO_PICK</code> 逐步下降至吸盤回報接觸；<code>GRASP/RELEASE</code> 切換吸附約束；<code>VERIFY</code> 要求積木落在目標 6 cm 內</td><td><code>NO_CONTACT</code>／<code>GRASP_FAILED</code>／<code>PLACE_MISS</code></td></tr>
-    </tbody>
-  </table></div>
+<body>
+  <main class="wrap">
+    <header>
+      <div class="eyebrow">NYCU Physical AI · TAICA</div>
+      <h1>HW3: Robot Manipulation &amp; Semantic Robot Knowledge</h1>
+      <p class="lede">Build the kinematic core of a UR5 robot arm, use it in a pick-and-place state machine, then
+        represent and validate the execution as a semantic knowledge graph.</p>
+    </header>
+    <nav aria-label="Page sections"><a href="#overview">Overview</a><a href="#setup">Setup</a><a href="#task1">Task
+        1</a><a href="#task2">Task 2</a><a href="#task3">Task 3</a><a href="#task4">Task 4</a><a
+        href="#submission">Submission</a></nav>
+    <section id="overview">
+      <h2>What you will build</h2>
+      <p class="intro">This homework connects numerical robot kinematics with a complete manipulation pipeline and
+        structured semantic data. Complete the tasks in order: later tasks directly use the functions you implement
+        earlier.</p>
+      <div class="layers">
+        <div class="layer"><b>1. Kinematics</b><span>Implement forward kinematics (FK) and iterative inverse kinematics
+            (IK) for the six-joint UR5.</span></div>
+        <div class="layer"><b>2. Manipulation</b><span>Use your FK and IK inside a deterministic finite-state machine
+            for pick-and-place episodes.</span></div>
+        <div class="layer"><b>3. Semantics</b><span>Ground robot specifications and FK/IK executions in RDF, then
+            validate them with SHACL.</span></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Task</th>
+              <th>Work</th>
+              <th>Files to edit</th>
+              <th>Check</th>
+              <th>Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>1</td>
+              <td>Forward kinematics</td>
+              <td><code>fk.py</code> — <code>your_fk()</code></td>
+              <td><code>python fk.py</code></td>
+              <td>20</td>
+            </tr>
+            <tr>
+              <td>2</td>
+              <td>Inverse kinematics</td>
+              <td><code>ik.py</code> — <code>your_ik()</code></td>
+              <td><code>python ik.py</code></td>
+              <td>40</td>
+            </tr>
+            <tr>
+              <td>3</td>
+              <td>FSM manipulation pipeline</td>
+              <td>Integration only; no code change</td>
+              <td><code>python fsm_task.py</code></td>
+              <td>10</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>Semantic grounding + SHACL</td>
+              <td><code>semantic/ground_execution.py</code>, <code>semantic/shapes.ttl</code></td>
+              <td><code>bash semantic/run_task4.sh</code></td>
+              <td>30</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <section id="setup">
+      <h2>Environment setup</h2>
+      <ol class="steps">
+        <li>Create and activate the Python environment.
+          <pre>conda create --name taica-hw3 python=3.7 -y
+conda activate taica-hw3
+pip install pybullet numpy scipy</pre>
+        </li>
+        <li>For Task 4, install JDK 11 or later and verify that <code>java</code> and <code>javac</code> are available.
+          <pre>sudo apt-get -y install openjdk-11-jdk
+java -version &amp;&amp; javac -version</pre>
+        </li>
+        <li>Run all commands from the repository root. The first Task 4 run downloads Apache Jena 4.10.0 into
+          <code>semantic/.cache/</code>; later runs use the cached copy.</li>
+      </ol>
+      <div class="callout"><strong>Use the supplied model.</strong> The D-H parameter table in <code>fk.py</code>
+        follows this repository's UR5 URDF and may differ from tables found online. Always use the provided table.</div>
+    </section>
+    <section id="task1">
+      <div class="task">TASK 1 · 20 POINTS</div>
+      <h2>Forward Kinematics</h2>
+      <p class="intro">Implement the UR5 forward-kinematics function using the classic D-H convention. Your result must
+        provide both the end-effector pose and the geometric Jacobian.</p>
+      <h3>Implement</h3>
+      <ol class="steps">
+        <li>Open <code>fk.py</code> and review <code>get_ur5_DH_params()</code>.</li>
+        <li>Implement <code>your_fk(DH_params, q, base_pos)</code>.</li>
+        <li>Return <code>(pose_7d, jacobian)</code>: the pose is <code>[x, y, z, qx, qy, qz, qw]</code> and the Jacobian
+          is a 6×6 geometric Jacobian.</li>
+        <li>Do not call PyBullet APIs for the calculation, and do not modify the supplied adjustment block at the end of
+          the function.</li>
+      </ol>
+      <h3>Verify</h3>
+      <pre>python fk.py            # easy, medium, and hard test cases
+python fk.py -g         # optional PyBullet GUI
+python fk.py -g -vp     # GUI with end-effector pose visualization</pre>
+      <p>Both the pose and Jacobian reports should have an error count of zero for every visible test file. Hidden test
+        cases are also used for grading.</p>
+      <div class="callout"><strong>Jacobian reminder.</strong> For a revolute joint, use the preceding frame axis: the
+        linear component is <code>z(i-1) × (p_end − p(i-1))</code>, and the angular component is <code>z(i-1)</code>.
+      </div>
+    </section>
+    <section id="task2">
+      <div class="task">TASK 2 · 40 POINTS</div>
+      <h2>Inverse Kinematics</h2>
+      <p class="intro">Implement an iterative, Jacobian-based IK solver. The solver will be used with its default
+        arguments during grading, so tune those defaults carefully.</p>
+      <h3>Implement</h3>
+      <ol class="steps">
+        <li>Open <code>ik.py</code> and implement <code>your_ik(robot_id, new_pose, base_pos, ...)</code>.</li>
+        <li>Use your own <code>your_fk()</code> and Jacobian in each iteration. Damped least squares or a pseudo-inverse
+          method are appropriate.</li>
+        <li>Compute both translational and rotational pose error, apply a stable update, and respect the supplied joint
+          limits.</li>
+        <li>You may inspect <code>pybullet_ik()</code> as a reference, but your solution must not call PyBullet IK APIs.
+        </li>
+      </ol>
+      <h3>Verify</h3>
+      <pre>python ik.py</pre>
+      <p>The three visible test sets should report zero errors, with mean positional error in the 10<sup>−3</sup> range.
+        If results fluctuate, review damping, step rate, stopping threshold, iteration count, and warm-start behavior.
+      </p>
+    </section>
+    <section id="task3">
+      <div class="task">TASK 3 · 10 POINTS</div>
+      <h2>FSM Manipulation Pipeline</h2>
+      <p class="intro">Your kinematics now control ten seeded UR5 pick-and-place episodes. This is an integration task:
+        <code>fsm_task.py</code> is provided and should not be changed.</p>
+      <h3>State flow</h3>
+      <pre>MOVE_TO_PREPICK → DESCEND_TO_PICK → GRASP → LIFT
+  → MOVE_TO_PREPLACE → DESCEND_TO_PLACE → RELEASE → RETREAT
+  → VERIFY → SUCCESS / FAILURE</pre>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Validation</th>
+              <th>Requirement</th>
+              <th>Failure message</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>IK</td>
+              <td>After position control, the achieved end-effector position is within 3 cm of the commanded target.
+              </td>
+              <td><code>IK_MISS in &lt;STATE&gt;</code></td>
+            </tr>
+            <tr>
+              <td>FK</td>
+              <td>Your FK, evaluated on measured joint angles, agrees with the simulator end-effector position within 1
+                cm.</td>
+              <td><code>FK_MISMATCH in &lt;STATE&gt;</code></td>
+            </tr>
+            <tr>
+              <td>Task events</td>
+              <td>The gripper must contact, grasp, release, and place the block within 6 cm of the goal.</td>
+              <td><code>NO_CONTACT</code>, <code>GRASP_FAILED</code>, or <code>PLACE_MISS</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Run</h3>
+      <pre>python fsm_task.py
+python fsm_task.py -g    # optional GUI</pre>
+      <p>A complete result reports ten successful episodes and a total score of <code>10.000 / 10.000</code>. Failure
+        names help identify which state exposes the kinematics issue.</p>
+    </section>
+    <section id="task4">
+      <div class="task">TASK 4 · 30 POINTS</div>
+      <h2>Semantic Grounding (REUSE) &amp; SHACL Validation</h2>
+      <p class="intro">Convert the numerical FK/IK execution process into structured RDF, then use SHACL to discover
+        invalid or problematic executions directly from those values.</p>
+      <h3>Part A: ground execution data</h3>
+      <p>Read <code>semantic/ontology/hw3-ontology.ttl</code> and reuse standard vocabulary wherever possible.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Concept</th>
+              <th>Required representation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Robot</td>
+              <td><code>cora:Robot</code> from IEEE 1872 CORA</td>
+            </tr>
+            <tr>
+              <td>Joints and states</td>
+              <td><code>soma:RevoluteJoint</code> and <code>soma:JointState</code></td>
+            </tr>
+            <tr>
+              <td>Pose</td>
+              <td><code>soma:6DPose</code>, composed of a <code>pos:Position</code> and quaternion orientation</td>
+            </tr>
+            <tr>
+              <td>Units</td>
+              <td>QUDT IRIs, including <code>unit:M</code> and <code>unit:RAD</code></td>
+            </tr>
+            <tr>
+              <td>Numbers</td>
+              <td>Typed <code>xsd:double</code> literals on structured RDF nodes — never JSON strings</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <ol class="steps">
+        <li>Read the worked example <code>fk_computation_to_triples()</code> in
+          <code>semantic/ground_execution.py</code>.</li>
+        <li>Implement <code>robot_spec_to_triples()</code> for all six joints, including D-H parameters and joint
+          limits.</li>
+        <li>Implement <code>ik_computation_to_triples()</code> for status, residual, target distance, and a structured
+          joint configuration.</li>
+        <li>Use the supplied serializers in <code>semantic/common.py</code>, especially <code>pose_to_ttl</code> and
+          <code>joint_config_to_ttl</code>.</li>
+      </ol>
+      <h3>Part B: write SHACL shapes</h3>
+      <p>The worked FK shape flags <code>FK_INACCURATE</code> when pose error is greater than <code>0.005</code>. Add
+        two shapes for <code>hw3:IKComputation</code>:</p>
+      <ul>
+        <li><code>hw3:hasTargetDistance</code> must be at most <code>0.90</code>; its message must start with
+          <code>ARM_OUT_OF_RANGE:</code>.</li>
+        <li><code>hw3:hasResidual</code> must be at most <code>0.02</code>; its message must start with
+          <code>NO_CONVERGENCE:</code>.</li>
+      </ul>
+      <div class="callout"><strong>Thresholds are inclusive.</strong> Use <code>sh:maxInclusive</code>, not
+        <code>sh:maxExclusive</code>. Records exactly at 0.90 m, 0.02 m, or 0.005 m are conforming.</div>
+      <h3>Run and interpret the results</h3>
+      <pre>bash semantic/run_task4.sh --group &lt;your-group-id&gt;</pre>
+      <p>The script checks the grounding structure, validates your generated <code>data.ttl</code>, validates the
+        24-record TA dataset, and scores the results. With a correct implementation, <code>target_mid</code> and
+        <code>target_far</code> are flagged as out of range, while <code>target_near</code> stays clean.</p>
+      <p>If the structural check fails, inspect <code>semantic/output/ta-validation.ttl</code>. If the TA-data check
+        differs from the answer key, the scorer prints each <code>expected [...] , got [...]</code> mismatch. Check the
+        exact message prefixes and thresholds first.</p>
+    </section>
+    <section id="submission">
+      <h2>Submission checklist</h2>
+      <ul>
+        <li><code>fk.py</code> with <code>your_fk()</code> completed</li>
+        <li><code>ik.py</code> with <code>your_ik()</code> completed</li>
+        <li><code>semantic/ground_execution.py</code> with both TODO functions completed</li>
+        <li><code>semantic/shapes.ttl</code> with the two required problem shapes completed</li>
+        <li>A short report with screenshots for all four tasks and an explanation of the SHACL findings in
+          <code>output/validation.ttl</code> and <code>output/probe-validation.ttl</code></li>
+      </ul>
+      <p class="intro">Do not submit generated directories such as <code>semantic/output/</code>,
+        <code>semantic/store/</code>, or <code>semantic/.cache/</code>.</p>
+    </section>
+    <footer>NYCU Physical AI · HW3 Student Guide · English is the default language for this page.</footer>
+  </main>
+</body>
 
-  <h3>過程</h3>
-  <ol class="steps">
-    <li><code>python fsm_task.py</code>（加 <code>-g</code> 開 GUI 觀看）——不需下載任何資料集或 checkpoint。</li>
-    <li>10 個 seeded 回合：積木與目標位置由亂數種子決定、皆落在 Task 1/2 測資已覆蓋的工作區內；大幅移動採 warm-start 重解（同 Task 2 連續軌跡的收斂方式）。</li>
-    <li>預期輸出：<code>Episode k/10 | SUCCESS</code> × 10 → <code>Total Score : 10.000 / 10.000</code>；失敗會指名<strong>是哪個狀態、什麼原因</strong>——FSM 把「運動學壞在管線何處」定位出來。</li>
-  </ol>
-  <p class="note">Task 3 不做 grounding——語意層（Task 4）聚焦在 FK/IK 的<strong>執行過程</strong>資料。</p>
-</section>
-
-
-
-<!-- ================================================================ -->
-<section id="t4">
-  <div class="task-eyebrow">TASK 4</div>
-  <h2>Semantic Grounding（REUSE）＋ SHACL 驗證</h2>
-  <p class="sec-intro">把 FK/IK 的<strong>執行過程數值</strong>帶進語意空間，再讓語意層自己找出哪裡出了問題。學生實作兩件事：<strong>grounding 與 SHACL</strong>。</p>
-
-  <h3>學生實作項目</h3>
-  <div class="tablewrap"><table>
-    <thead><tr><th>實作</th><th>檔案（含 worked example）</th><th>產物</th></tr></thead>
-    <tbody>
-      <tr><td>① <strong>Grounding</strong>——ontology API 函式，REUSE 標準本體把執行資料轉成語意資料</td><td><code>ground_execution.py</code>：<code>fk_computation_to_triples</code> 為範例；TODO = <code>robot_spec_to_triples</code>、<code>ik_computation_to_triples</code></td><td><code>output/data.ttl</code></td></tr>
-      <tr><td>② <strong>SHACL</strong>——驗證 shapes，從數值發現執行過程的問題狀態</td><td><code>shapes.ttl</code>：FK 準確度 shape 為範例；TODO = <code>ARM_OUT_OF_RANGE</code>（distance ≤ 0.90）、<code>NO_CONVERGENCE</code>（residual ≤ 0.02）</td><td><code>output/validation.ttl</code></td></tr>
-    </tbody>
-  </table></div>
-
-  <h3>過程（run_task4.sh，五步）</h3>
-  <ol class="steps">
-    <li>工具鏈檢查 ＋ 準備 Apache Jena（<code>shacl</code> CLI 做驗證）。</li>
-    <li><strong>Grounding</strong>：跑 <code>your_fk</code>（3 筆測資 vs GT）與 <code>your_ik</code>（near / mid / far 三個固定目標）→ <code>data.ttl</code>（含 <code>hasTargetDistance</code>、結構化 JointConfiguration）。</li>
-    <li><strong>SHACL × 3</strong>：你的 shapes 驗自己的 data → <code>validation.ttl</code>；TA 完整 shapes（<code>ta-shapes-full.ttl</code>）驗你的 data；你的 shapes 驗<strong>助教提供的 24 筆執行紀錄資料集</strong>（<code>ta-faulty-execution.ttl</code>），結果逐筆與標準答案 <code>ta-answer-key.json</code> 比對。</li>
-    <li>評分：<code>score_semantic.py</code> 解析三份驗證報告 → 30 分。</li>
-  </ol>
-
-  <h3>TA 資料集 ＋ 標準答案（你的驗證結果必須與答案逐筆一致）</h3>
-  <div class="tablewrap"><table>
-    <thead><tr><th>組成</th><th>筆數</th><th>標準答案（<code>ta-answer-key.json</code>）</th></tr></thead>
-    <tbody>
-      <tr><td>乾淨 IK（含距離恰 0.90 m、殘差恰 0.02 m 的<strong>邊界案例</strong>）</td><td>8</td><td>零旗標（誤報即該筆不算對）</td></tr>
-      <tr><td>超出範圍 IK（含 0.901 m 剛過門檻）</td><td>2</td><td><code>ARM_OUT_OF_RANGE</code></td></tr>
-      <tr><td>未收斂 IK（含 0.0201 m 剛過門檻）</td><td>3</td><td><code>NO_CONVERGENCE</code></td></tr>
-      <tr><td>兩者皆有的 IK</td><td>3</td><td>兩個旗標都要，缺一即錯</td></tr>
-      <tr><td>乾淨 FK（含 pose error 恰 0.005 的邊界案例）</td><td>5</td><td>零旗標</td></tr>
-      <tr><td>不準 FK（含 0.0051 剛過門檻）</td><td>3</td><td><code>FK_INACCURATE</code></td></tr>
-    </tbody>
-  </table></div>
-  <p class="note">共 24 筆（11 筆有問題、13 筆乾淨），逐筆比對、旗標集合須與答案<strong>完全一致</strong>。門檻要用 <code>sh:maxInclusive</code>（含等於）——資料集裡有恰等於 0.90／0.02／0.005 的案例，它們是<strong>合格</strong>的；寫錯會在評分報告看到 <code>expected [...] , got [...]</code> 指出錯在哪幾筆。</p>
-
-  <div class="derived">
-    <span class="tag">設計原則（評分也依此設計）</span>
-    <p><strong>SHACL 直接驗證數值</strong>：門檻檢查（reach 0.90 m／residual 0.02 m／pose error 0.005 m）以宣告式 constraints 表達，取代手寫驗證程式。TA 完整版 <code>ta-shapes-full.ttl</code> 另含 STRUCTURE 結構檢查（REUSE 正確性）與 SHACL-SPARQL 關節限位交叉檢查，作為自動評分依據。</p>
-  </div>
-
-  <div class="derived" style="margin-top:18px">
-    <span class="tag">評分（Task 4 · 30 分）</span>
-    <p>S1 grounding 結構（TA STRUCTURE shapes 零違規，12）· S2 自己資料的問題偵測（mid/far 標旗、near 乾淨、零限位違規，8）· S3 你的 shapes 驗 TA 24 筆資料集、逐筆對答案（偵測 8 分 ＋ 不誤報 2 分，按答對比例給分）。</p>
-  </div>
-</section>
-
-
-
-
-
-<footer style="margin-top:80px">NYCU Physical AI · HW3 學生引導手冊 · 課程詞彙 &lt;taica.course/hw3/ontology#&gt;</footer>
-
-</div>
-  <p class="note" style="margin-top:14px">序列化 helper：<code>semantic/common.py</code>（hw3: 版）與 <code>semantic_bridge/ttl_helpers.py</code>（ur5: 版）——<code>pose_to_ttl</code> / <code>joint_config_to_ttl</code>。</p>
-
-  <footer>NYCU Physical AI 2025 Fall · HW3 統一結構化語意表示 · 更新於 2026-07-29</footer>
-</section>
-
-</div>
+</html>
