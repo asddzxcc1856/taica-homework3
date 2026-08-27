@@ -27,7 +27,7 @@ First build the semantic layer: ground an execution process (TA reference solver
 
 ### Scope and learning outcomes
 
-In scope: analytic FK, geometric Jacobians, iterative IK, RDF/Turtle authoring with provided serializers, SHACL node shapes. Out of scope: motion planning, learned policies, OWL reasoning, SPARQL. After finishing, you will be able to build and debug the kinematic stack of a real manipulation system and represent its behavior semantically.
+In scope: RDF/Turtle authoring with provided serializers, SHACL node shapes (plus one SHACL-SPARQL constraint), analytic FK, geometric Jacobians, iterative IK. Out of scope: motion planning, learned policies, OWL reasoning, SPARQL. After finishing, you will be able to build and debug the kinematic stack of a real manipulation system and represent its behavior semantically.
 
 ### Task overview
 
@@ -46,7 +46,7 @@ In scope: analytic FK, geometric Jacobians, iterative IK, RDF/Turtle authoring w
 
 - **Programming:** comfortable Python (NumPy arrays, matrix operations).
 - **Mathematics:** homogeneous transforms, rotation representations (quaternions), basic linear algebra (pseudo-inverse), vector cross products.
-- **Concepts you will learn here if new:** classic D-H convention, geometric Jacobian, damped least squares, RDF/Turtle, SHACL.
+- **Concepts you will learn here if new:** RDF/Turtle, SHACL, classic D-H convention, geometric Jacobian, damped least squares.
 - **Tools:** a Linux machine with conda; any code editor.
 
 ---
@@ -309,7 +309,7 @@ Pass criterion: `10/10 SUCCESS`, score `10.000 / 10.000`. Failure messages tell 
 ## 7. Testing and Validation
 
 - **Public tests** are exactly the four commands above — the graders run the same programs (plus additional hidden FK/IK test cases in the same JSON format).
-- **Tolerances** (all built into the released code): FK pose 0.005, Jacobian 0.05, IK 0.02 m, FSM 3 cm / 1 cm / 6 cm, SHACL thresholds 0.90 / 0.02 / 0.005.
+- **Tolerances** (all built into the released code): SHACL thresholds 0.90 / 0.02 / 0.005 (Task 1), FK pose 0.005 and Jacobian 0.05 (Task 2), IK 0.02 m (Task 3), FSM 3 cm / 1 cm / 6 cm (Task 4).
 - **Determinism:** Task 4 episodes are seeded; a correct solution scores identically on every run.
 - **Task 1 self-diagnosis:** `semantic/output/ta-validation.ttl` explains every `STRUCTURE:` violation (typically a missing property or an untyped number — write `"0.0892"^^xsd:double`, never a bare `0.0892`); the S3 section of the score output prints `expected [...] , got [...]` for every mismatched record.
 - **Common error signatures:** wrong D-H convention (all FK cases fail), missing orientation error (easy IK passes, hard fails), parameters not set as defaults (your runs pass, grading fails), `maxExclusive` shapes or a non-strict joint-limit `FILTER` (S3 loses exactly the boundary records).

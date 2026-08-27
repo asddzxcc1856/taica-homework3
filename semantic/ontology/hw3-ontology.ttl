@@ -16,8 +16,8 @@
 
 <http://taica.course/hw3/ontology> a owl:Ontology ;
     rdfs:label "TAICA HW3 Robot Kinematics Evaluation Ontology"@en ;
-    rdfs:comment "Vocabulary for evaluating HW3 Task 1 (FK), Task 2 (IK), and Task 3 (Transporter block insertion) as machine-readable knowledge. Design rule: REUSE existing vocabularies wherever a suitable term exists — IEEE 1872 CORA for robots, SOMA for joints / poses / episodes, DUL for upper-level alignment — and mint hw3: terms only for course-specific concepts (kinematic computations, D-H parameters, evaluation statuses) that no standard vocabulary covers."@en ;
-    owl:versionInfo "2026-fall-2.0" .
+    rdfs:comment "Vocabulary for HW3 Task 1 (semantic grounding + SHACL validation): robot specifications and FK/IK execution processes (the solvers themselves are implemented in Tasks 2-3) represented as machine-readable knowledge. Design rule: REUSE existing vocabularies wherever a suitable term exists — IEEE 1872 CORA for robots, SOMA for joints / joint states / poses, IEEE 1872 POS for positions, DUL for upper-level alignment, QUDT for units — and mint hw3: terms only for course-specific concepts (kinematic computations, D-H parameters, statuses, distances) that no standard vocabulary covers."@en ;
+    owl:versionInfo "2026-fall-3.0" .
 
 # =============================================================================
 # 0. Local stubs for the reused external vocabularies
