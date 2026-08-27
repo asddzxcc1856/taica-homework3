@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# TAICA HW3 — Task 4 one-command runner (REUSE grounding + SHACL validation)
+# TAICA HW3 — Task 1 one-command runner (REUSE grounding + SHACL validation)
 #
 #   STEP 1  Check the toolchain (java / python)
 #   STEP 2  Prepare Apache Jena (its `shacl` CLI does the validation)
@@ -13,8 +13,8 @@
 #   STEP 5  Scoring (score_semantic.py parses the validation reports)
 #
 # Usage (from the hw3 root or from semantic/):
-#   bash semantic/run_task4.sh --group <your-group-id>
-#   bash semantic/run_task4.sh --reference      # smoke test with reference IK
+#   bash semantic/run_task1.sh --group <your-group-id>
+#   bash semantic/run_task1.sh --group ... --own    # after Tasks 2-3: use YOUR FK/IK
 #
 # Environment variables:
 #   PYTHON     python interpreter (default: python; must be the taica-hw3 env)
@@ -82,5 +82,5 @@ run_shacl ta-shapes-full.ttl output/data.ttl output/ta-validation.ttl
 run_shacl shapes.ttl ta-faulty-execution.ttl output/probe-validation.ttl
 
 echo
-echo "== STEP 5/5 | Scoring Task 4 =="
+echo "== STEP 5/5 | Scoring Task 1 =="
 "$PYTHON" score_semantic.py

@@ -3,7 +3,7 @@
 **UR5 Kinematics, FSM Manipulation, and Semantic Knowledge Graphs**
 NYCU Physical AI / TAICA — Homework 3 · Total: 100 points
 
-This guide is self-contained: it covers the assignment goals, every installation step, every task in detail, testing, submission, and troubleshooting. A short-form task specification is in [SPEC.md](SPEC.md), and a visual walkthrough is in [docs/hw3-student-guide.html](docs/hw3-student-guide.html).
+This guide is self-contained: it covers the assignment goals, every installation step, every task in detail, testing, submission, and troubleshooting. A visual walkthrough is in [docs/hw3-student-guide.html](docs/hw3-student-guide.html).
 
 ---
 
@@ -11,19 +11,19 @@ This guide is self-contained: it covers the assignment goals, every installation
 
 ### Background and motivation
 
-Forward kinematics (FK) and inverse kinematics (IK) are the mathematical core of robot manipulation — but they are usually taught as isolated functions. In this assignment you implement both from scratch for a simulated UR5 arm, then watch them operate inside a complete pick-and-place pipeline, and finally turn your solvers' *execution data* into a machine-readable knowledge graph that can be validated automatically.
+Forward kinematics (FK) and inverse kinematics (IK) are the mathematical core of robot manipulation — but they are usually taught as isolated functions. This assignment inverts the usual order: you FIRST build a machine-readable knowledge graph of a robot execution process and the SHACL rules that validate it (on TA reference data — no kinematics code needed), and only then implement FK and IK from scratch. Because the validation layer exists before your algorithms do, every implementation step can be checked immediately — data classes, forms, and expected results are known up front. Finally your solvers drive a complete pick-and-place pipeline.
 
 ### Objectives
 
-1. Implement FK for a 6-DoF arm using classic Denavit–Hartenberg (D-H) parameters, producing an end-effector pose and a 6×6 geometric Jacobian.
-2. Implement iterative Jacobian-based IK.
-3. Run your solvers inside a deterministic finite-state-machine (FSM) manipulation pipeline.
-4. Ground your FK/IK execution process as structured RDF that reuses standard robotics ontologies.
-5. Write SHACL shapes that detect problem states (arm out of range, no convergence) directly from the grounded numbers.
+1. Ground an FK/IK execution process as structured RDF that reuses standard robotics ontologies.
+2. Write SHACL shapes — including a SHACL-SPARQL constraint — that detect problem states (arm out of range, no convergence, joint-limit violation) directly from the grounded numbers.
+3. Implement FK for a 6-DoF arm using classic Denavit–Hartenberg (D-H) parameters, producing an end-effector pose and a 6×6 geometric Jacobian.
+4. Implement iterative Jacobian-based IK.
+5. Run your solvers inside a deterministic finite-state-machine (FSM) manipulation pipeline.
 
 ### Problem statement
 
-Given the UR5 model in this repository and its D-H table, implement `your_fk` and `your_ik` so that: the accuracy tests pass; the FSM completes 10/10 pick-and-place episodes; your execution process is grounded into `semantic/output/data.ttl`; and your SHACL shapes, applied to a TA-provided 24-record execution dataset, reproduce the published answer key exactly.
+First build the semantic layer: ground an execution process (TA reference solvers) into `semantic/output/data.ttl`, and write SHACL shapes whose validation of a TA-provided 30-record execution dataset reproduces the published answer key exactly. Then implement `your_fk` and `your_ik` so that the accuracy tests pass and the FSM completes 10/10 pick-and-place episodes — and validate your own execution with the semantic layer you built.
 
 ### Scope and learning outcomes
 
@@ -33,10 +33,12 @@ In scope: analytic FK, geometric Jacobians, iterative IK, RDF/Turtle authoring w
 
 | Task | Content | Files you edit | Verification | Points |
 |---|---|---|---|---:|
-| 1 | Forward Kinematics | `fk.py` — `your_fk()` | `python fk.py` | 20 |
-| 2 | Inverse Kinematics | `ik.py` — `your_ik()` | `python ik.py` | 40 |
-| 3 | FSM Manipulation Pipeline | none (integration check) | `python fsm_task.py` | 10 |
-| 4 | Semantic Grounding + SHACL | `semantic/ground_execution.py`, `semantic/shapes.ttl` | `bash semantic/run_task4.sh` | 30 |
+| 1 | Semantic Grounding + SHACL | `semantic/ground_execution.py`, `semantic/shapes.ttl` | `bash semantic/run_task1.sh` | 30 |
+| 2 | Forward Kinematics | `fk.py` — `your_fk()` | `python fk.py` | 20 |
+| 3 | Inverse Kinematics | `ik.py` — `your_ik()` | `python ik.py` | 40 |
+| 4 | FSM Manipulation Pipeline | none (integration check) | `python fsm_task.py` | 10 |
+
+**Why the semantic layer comes first:** in Task 1 you build the knowledge representation and its validation rules before implementing any kinematics — the execution data comes from the TA reference solvers, so you know up front exactly which data classes and forms will be checked and what the expected results are. While implementing Tasks 2–3, re-run the same pipeline with `--own` at any time for immediate semantic feedback on your own solvers; Task 4 then exercises them inside a full manipulation loop.
 
 ---
 
@@ -59,7 +61,7 @@ In scope: analytic FK, geometric Jacobians, iterative IK, RDF/Turtle authoring w
 | Storage | Less than 1 GB | Required |
 | Python | 3.7 in a conda environment | Required |
 | Python packages | `pybullet`, `numpy`, `scipy` | Required |
-| Java | JDK 11 or later (Task 4 only) | Required |
+| Java | JDK 11 or later (Task 1 only) | Required |
 | Network | Once, for pip installs and one ~30 MB download; offline afterwards | Required (one-time) |
 | X display | Only for the optional `-g` GUI modes | Optional |
 
@@ -95,7 +97,7 @@ pip install pybullet numpy scipy
 python -c "import pybullet, numpy, scipy; print('OK')"    # verify: OK
 ```
 
-**Step 4 — JDK 11+ (needed for Task 4):**
+**Step 4 — JDK 11+ (needed for Task 1):**
 
 ```bash
 sudo apt-get -y install openjdk-11-jdk
@@ -116,16 +118,89 @@ You will edit exactly four files: `fk.py`, `ik.py`, `semantic/ground_execution.p
 **Step 6 — Toolchain smoke test (optional but recommended):**
 
 ```bash
-bash semantic/run_task4.sh
+bash semantic/run_task1.sh
 ```
 
-The first run downloads Apache Jena 4.10.0 (~30 MB) into `semantic/.cache/` and reuses it afterwards. Before you implement Task 1, the script will stop in STEP 3 with `NotImplementedError` — that is expected; if STEP 1 and STEP 2 pass, your environment is ready. If the download fails, extract Jena 4.10.0 manually and run with `export JENA_HOME=<path-to-apache-jena-4.10.0>`.
+The first run downloads Apache Jena 4.10.0 (~30 MB) into `semantic/.cache/` and reuses it afterwards. On the pristine template the script stops in STEP 3 with `NotImplementedError` until you implement the two Task 1 grounding TODOs — that is expected; if STEP 1 and STEP 2 pass, your environment is ready. If the download fails, extract Jena 4.10.0 manually and run with `export JENA_HOME=<path-to-apache-jena-4.10.0>`.
 
 ---
 
 ## 5. Assignment Tasks
 
-### Task 1 — Forward Kinematics (20 points)
+### Task 1 — Semantic Grounding (REUSE) + SHACL Validation (30 points)
+
+**Objective:** turn the numbers of an FK/IK execution process into a semantic graph, then let declarative constraints find the problems.
+
+**This task comes first** — by default the execution data is produced by the **TA reference solvers** (ground-truth FK poses + the simulator IK, clipped to the course joint limits), so no FK/IK implementation is needed. After finishing Tasks 2–3 you can re-run the same pipeline with `--own` to validate **your own** solvers.
+
+```
+  TA reference solvers      (1) grounding
+ (later: --own = your  ──>  ground_execution.py  ──>  semantic/output/data.ttl
+  FK/IK execution)
+                                                  (2) SHACL
+                        shapes.ttl vs data.ttl                 → validation.ttl
+                        shapes.ttl vs ta-faulty-execution.ttl  → probe-validation.ttl
+```
+
+**Step A — read the vocabulary** (`semantic/ontology/hw3-ontology.ttl`). The design rule is REUSE — use standard vocabularies wherever one exists:
+
+| Concept | Representation |
+|---|---|
+| Robot | `cora:Robot` (IEEE 1872 CORA) |
+| Joint / joint state | `soma:RevoluteJoint`, `soma:JointState` + `soma:hasJointPosition` |
+| Pose | `soma:6DPose` = `pos:Position` component + quaternion component |
+| Units | QUDT IRIs: `unit:M`, `unit:RAD` |
+| Numbers | typed `"…"^^xsd:double` literals on structured nodes — **never JSON strings** |
+
+Use the serializers in `semantic/common.py` (`pose_to_ttl`, `joint_config_to_ttl`).
+
+**Step B — grounding** (`semantic/ground_execution.py`). One function is a worked example; you implement two:
+
+| Function | Grounds | Status |
+|---|---|---|
+| `fk_computation_to_triples()` | one FK execution: input configuration, EE pose, errors | worked example — read it first |
+| `robot_spec_to_triples()` | the robot: six joints with D-H parameters and limits | **TODO 1** |
+| `ik_computation_to_triples()` | one IK execution: status, residual, target distance, joint configuration | **TODO 2** |
+
+The provided `main()` grounds 3 FK executions (course ground truth) and 3 IK executions (reference solver on the fixed near / mid / far targets) and writes `semantic/output/data.ttl`.
+
+**Step C — SHACL** (`semantic/shapes.ttl`). The FK-accuracy shape (pose error ≤ 0.005 else `FK_INACCURATE`) is the worked example. Add three shapes:
+
+1. Targeting `hw3:IKComputation`: `hw3:hasTargetDistance` at most **0.90** → message must begin with `ARM_OUT_OF_RANGE:`
+2. Targeting `hw3:IKComputation`: `hw3:hasResidual` at most **0.02** → message must begin with `NO_CONVERGENCE:`
+3. Targeting `soma:JointState`: the joint angle (`soma:hasJointPosition`) must lie within its own joint's limits (`hw3:hasJointLowerLimit` / `hw3:hasJointUpperLimit`, reached via `hw3:isStateOfJoint`) → message must begin with `JOINT_LIMIT_VIOLATION:`. SHACL Core cannot compare values taken from two different nodes, so this shape uses a **SHACL-SPARQL constraint** (`sh:sparql` with a `SELECT $this` query); the `sh:prefixes` declaration is already provided in the file.
+
+Three hard rules: the message **prefix** is what the grader matches; the numeric thresholds must use **`sh:maxInclusive`** — the TA dataset contains records exactly at 0.90 / 0.02 / 0.005, and those are *conforming*; and joint limits are **inclusive** — an angle exactly at a limit is legal, so the SPARQL `FILTER` must use strict `<` / `>` (the dataset contains a record exactly at a limit).
+
+**Step D — the TA dataset and answer key.** `semantic/ta-faulty-execution.ttl` holds **30 execution records** — IK computations, FK computations, and joint states, good and bad, including boundary values; `semantic/ta-answer-key.json` is the published expected result. Your shapes are run against the dataset, and each record's set of flags must match the answer key **exactly** — no false positives, no false negatives. Score: `8 × (correct faulty records / 14) + 2 × (correct clean records / 16)`.
+
+**Run everything:**
+
+```bash
+conda activate taica-hw3
+bash semantic/run_task1.sh --group <your-group-id>
+```
+
+Expected full-score output:
+
+```
+  [S1] grounding structure (0 violations) OK  (+12)
+  [S2] target_mid flagged ARM_OUT_OF_RANGE .... OK  (+2)
+  [S2] target_far flagged ARM_OUT_OF_RANGE .... OK  (+2)
+  [S2] target_near clean (no problem flags) ... OK  (+2)
+  [S2] no JOINT_LIMIT_VIOLATION ............... OK  (+2)
+  [S3] TA dataset vs answer key: faulty 14/14, clean 16/16 OK  (+10)
+  Your Task 1 Score : 30.0 / 30.0
+```
+
+The reference execution genuinely contains two out-of-range targets (mid, far) and one solvable one (near) — S2 checks that your grounding + the TA shapes rediscover exactly that.
+
+**Later, after Tasks 2–3:** re-run with your own solvers and watch the semantic layer you built validate your implementation:
+
+```bash
+bash semantic/run_task1.sh --group <your-group-id> --own
+```
+### Task 2 — Forward Kinematics (20 points)
 
 **Objective:** compute the UR5 end-effector pose and geometric Jacobian analytically.
 
@@ -156,7 +231,7 @@ python fk.py -g -vp      # optional: also draw your pose (red) vs ground truth (
 
 Pass criterion: **Error Count 0** for both FK and Jacobian on all three files. Tolerances: pose error < 0.005 (L2 over the 7-vector), Jacobian error < 0.05 (matrix L2). Grading uses additional hidden test cases of the same format.
 
-### Task 2 — Inverse Kinematics (40 points)
+### Task 3 — Inverse Kinematics (40 points)
 
 **Objective:** solve joint angles for a target end-effector pose using your own FK and Jacobian.
 
@@ -182,7 +257,9 @@ python ik.py
 
 Pass criterion: Error Count 0 on all three files (threshold: the executed end-effector pose must land within 0.02 m of the target) and mean error around 10⁻³ m. The three difficulty levels differ in the step size between consecutive targets — if easy passes and hard fails, revisit your step rate, damping, and iteration budget.
 
-### Task 3 — FSM Manipulation Pipeline (10 points)
+With both solvers done, revisit Task 1: `bash semantic/run_task1.sh --group <id> --own` grounds and validates **your** execution.
+
+### Task 4 — FSM Manipulation Pipeline (10 points)
 
 **Objective:** demonstrate that your FK/IK survive integration into a full manipulation loop. **No code changes** — `fsm_task.py` is provided.
 
@@ -209,84 +286,21 @@ python fsm_task.py        # scoring mode (headless)
 python fsm_task.py -g     # watch it in the PyBullet GUI
 ```
 
-Pass criterion: `10/10 SUCCESS`, score `10.000 / 10.000`. Failure messages tell you **which state and which check** broke — use them to debug Task 1/2 (e.g., `IK_MISS` only on long moves points at solver convergence; `NO_CONTACT` usually means a systematic height error in FK).
+Pass criterion: `10/10 SUCCESS`, score `10.000 / 10.000`. Failure messages tell you **which state and which check** broke — use them to debug Tasks 2–3 (e.g., `IK_MISS` only on long moves points at solver convergence; `NO_CONTACT` usually means a systematic height error in FK).
 
-### Task 4 — Semantic Grounding (REUSE) + SHACL Validation (30 points)
-
-**Objective:** turn your FK/IK execution numbers into a semantic graph, then let declarative constraints find the problems.
-
-```
-                        (1) grounding
-your_fk / your_ik  ──>  ground_execution.py  ──>  semantic/output/data.ttl
-                                                  (2) SHACL
-                        shapes.ttl vs data.ttl                 → validation.ttl
-                        shapes.ttl vs ta-faulty-execution.ttl  → probe-validation.ttl
-```
-
-**Step A — read the vocabulary** (`semantic/ontology/hw3-ontology.ttl`). The design rule is REUSE — use standard vocabularies wherever one exists:
-
-| Concept | Representation |
-|---|---|
-| Robot | `cora:Robot` (IEEE 1872 CORA) |
-| Joint / joint state | `soma:RevoluteJoint`, `soma:JointState` + `soma:hasJointPosition` |
-| Pose | `soma:6DPose` = `pos:Position` component + quaternion component |
-| Units | QUDT IRIs: `unit:M`, `unit:RAD` |
-| Numbers | typed `"…"^^xsd:double` literals on structured nodes — **never JSON strings** |
-
-Use the serializers in `semantic/common.py` (`pose_to_ttl`, `joint_config_to_ttl`).
-
-**Step B — grounding** (`semantic/ground_execution.py`). One function is a worked example; you implement two:
-
-| Function | Grounds | Status |
-|---|---|---|
-| `fk_computation_to_triples()` | one FK execution: input configuration, EE pose, errors | worked example — read it first |
-| `robot_spec_to_triples()` | the robot: six joints with D-H parameters and limits | **TODO 1** |
-| `ik_computation_to_triples()` | one IK execution: status, residual, target distance, joint configuration | **TODO 2** |
-
-The provided `main()` runs your FK (3 cases vs ground truth) and your IK (3 fixed targets: near / mid / far) and writes `semantic/output/data.ttl`.
-
-**Step C — SHACL** (`semantic/shapes.ttl`). The FK-accuracy shape (pose error ≤ 0.005 else `FK_INACCURATE`) is the worked example. Add two shapes targeting `hw3:IKComputation`:
-
-1. `hw3:hasTargetDistance` at most **0.90** → message must begin with `ARM_OUT_OF_RANGE:`
-2. `hw3:hasResidual` at most **0.02** → message must begin with `NO_CONVERGENCE:`
-
-Two hard rules: the message **prefix** is what the grader matches, and the thresholds must use **`sh:maxInclusive`** — the TA dataset contains records exactly at 0.90 / 0.02 / 0.005, and those are *conforming*.
-
-**Step D — the TA dataset and answer key.** `semantic/ta-faulty-execution.ttl` holds **24 execution records** (good and bad, including boundary values); `semantic/ta-answer-key.json` is the published expected result. Your shapes are run against the dataset, and each record's set of flags must match the answer key **exactly** — no false positives, no false negatives. Score: `8 × (correct faulty records / 11) + 2 × (correct clean records / 13)`.
-
-**Run everything:**
-
-```bash
-conda activate taica-hw3
-bash semantic/run_task4.sh --group <your-group-id>
-```
-
-Expected full-score output:
-
-```
-  [S1] grounding structure (0 violations) OK  (+12)
-  [S2] target_mid flagged ARM_OUT_OF_RANGE .... OK  (+2)
-  [S2] target_far flagged ARM_OUT_OF_RANGE .... OK  (+2)
-  [S2] target_near clean (no problem flags) ... OK  (+2)
-  [S2] no JOINT_LIMIT_VIOLATION ............... OK  (+2)
-  [S3] TA dataset vs answer key: faulty 11/11, clean 13/13 OK  (+10)
-  Your Task 4 Score : 30.0 / 30.0
-```
-
-With correct kinematics, your own data genuinely contains two out-of-range targets (mid, far) and one solvable one (near) — S2 checks that your grounding + the TA shapes rediscover exactly that.
 
 ---
 
 ## 6. Recommended Workflow
 
-1. Read this guide and `SPEC.md` end to end.
+1. Read this guide end to end.
 2. Install and verify the environment (§4).
-3. Run `python fk.py` once to see the harness and output format (it will fail on the stub — that's fine).
-4. Implement `your_fk`; iterate until all visible FK tests report zero errors.
-5. Implement `your_ik`; tune defaults until all visible IK tests pass.
-6. Run `python fsm_task.py`; debug any state-localized failures (they point back at Tasks 1–2).
-7. Read the Task 4 worked examples (`fk_computation_to_triples`, the FK shape), then implement the two grounding functions and the two shapes.
-8. Run `bash semantic/run_task4.sh --group <id>`; fix issues using the validation reports in `semantic/output/`.
+3. Read the Task 1 worked examples (`fk_computation_to_triples`, the FK shape), then implement the two grounding functions and the three shapes.
+4. Run `bash semantic/run_task1.sh --group <id>`; fix issues using the validation reports in `semantic/output/` until it reports 30.0 / 30.0.
+5. Implement `your_fk`; iterate until all visible FK tests report zero errors.
+6. Implement `your_ik`; tune defaults until all visible IK tests pass.
+7. Re-run Task 1 with `--own` — the semantic layer now validates YOUR solvers' execution.
+8. Run `python fsm_task.py`; debug any state-localized failures (they point back at Tasks 2–3).
 9. Re-run all four commands from a clean state; capture the outputs for your report.
 10. Assemble and submit (§8).
 
@@ -296,9 +310,9 @@ With correct kinematics, your own data genuinely contains two out-of-range targe
 
 - **Public tests** are exactly the four commands above — the graders run the same programs (plus additional hidden FK/IK test cases in the same JSON format).
 - **Tolerances** (all built into the released code): FK pose 0.005, Jacobian 0.05, IK 0.02 m, FSM 3 cm / 1 cm / 6 cm, SHACL thresholds 0.90 / 0.02 / 0.005.
-- **Determinism:** Task 3 episodes are seeded; a correct solution scores identically on every run.
-- **Task 4 self-diagnosis:** `semantic/output/ta-validation.ttl` explains every `STRUCTURE:` violation (typically a missing property or an untyped number — write `"0.0892"^^xsd:double`, never a bare `0.0892`); the S3 section of the score output prints `expected [...] , got [...]` for every mismatched record.
-- **Common error signatures:** wrong D-H convention (all FK cases fail), missing orientation error (easy IK passes, hard fails), parameters not set as defaults (your runs pass, grading fails), `maxExclusive` shapes (S3 loses exactly the boundary records).
+- **Determinism:** Task 4 episodes are seeded; a correct solution scores identically on every run.
+- **Task 1 self-diagnosis:** `semantic/output/ta-validation.ttl` explains every `STRUCTURE:` violation (typically a missing property or an untyped number — write `"0.0892"^^xsd:double`, never a bare `0.0892`); the S3 section of the score output prints `expected [...] , got [...]` for every mismatched record.
+- **Common error signatures:** wrong D-H convention (all FK cases fail), missing orientation error (easy IK passes, hard fails), parameters not set as defaults (your runs pass, grading fails), `maxExclusive` shapes or a non-strict joint-limit `FILTER` (S3 loses exactly the boundary records).
 
 ---
 
@@ -306,10 +320,10 @@ With correct kinematics, your own data genuinely contains two out-of-range targe
 
 Submit:
 
-1. `fk.py` (with `your_fk` completed)
-2. `ik.py` (with `your_ik` completed)
-3. `semantic/ground_execution.py` (both TODO functions completed)
-4. `semantic/shapes.ttl` (both problem shapes completed)
+1. `semantic/ground_execution.py` (both TODO functions completed)
+2. `semantic/shapes.ttl` (all three problem shapes completed)
+3. `fk.py` (with `your_fk` completed)
+4. `ik.py` (with `your_ik` completed)
 5. A short report (PDF): the four score outputs (screenshots or copied text) plus a brief explanation of what your SHACL validation discovered in `output/validation.ttl` and in the TA dataset (`output/probe-validation.ttl`)
 
 Keep the released directory structure and file names unchanged. Do **not** submit generated directories (`semantic/output/`, `semantic/.cache/`, `__pycache__/`).
@@ -326,7 +340,7 @@ Submission platform, deadline, late policy, and re-submission policy: **announce
 | `ImportError: No module named pybullet` | You forgot `conda activate taica-hw3`. |
 | `java: command not found` (Task 4) | Install JDK 11+ (§4 Step 4). |
 | Jena download fails | `export JENA_HOME=<manually-extracted apache-jena-4.10.0>` and re-run. |
-| `NotImplementedError` in `run_task4.sh` STEP 3 | Expected before Tasks 1–2 are implemented — not an environment problem. |
+| `NotImplementedError` in `run_task1.sh` STEP 3 | Expected until you implement the two Task 1 grounding TODOs — not an environment problem. |
 | GUI window doesn't open / `cannot connect to X server` | You are in a headless session; drop `-g` (scoring never needs the GUI) or set a valid `DISPLAY`. |
 | Arm doesn't move in the Task 1 GUI | Don't edit the visualization block in `score_fk` — the release already handles GUI stepping. |
 | FSM fails with `NO_CONTACT` | Usually a systematic FK height error — check that you didn't modify the `adjustment` block. |
@@ -359,17 +373,17 @@ If none of this resolves your issue, report it as described in §13.
 
 | Resource | Author / Org | Link | Relevant to |
 |---|---|---|---|
-| The Ultimate Guide to Jacobian Matrices for Robotics | Automatic Addison | https://automaticaddison.com/the-ultimate-guide-to-jacobian-matrices-for-robotics/ | Tasks 1–2: the exact Jacobian construction used here |
-| SHACL — Shapes Constraint Language (W3C Recommendation, 2017) | W3C | https://www.w3.org/TR/shacl/ | Task 4: node shapes, `sh:maxInclusive`, validation reports |
-| The in-repo worked examples | Course staff | `semantic/ground_execution.py`, `semantic/shapes.ttl`, `semantic/ontology/hw3-ontology.ttl` | Task 4: the patterns you are asked to imitate |
+| The Ultimate Guide to Jacobian Matrices for Robotics | Automatic Addison | https://automaticaddison.com/the-ultimate-guide-to-jacobian-matrices-for-robotics/ | Tasks 2–3: the exact Jacobian construction used here |
+| SHACL — Shapes Constraint Language (W3C Recommendation, 2017) | W3C | https://www.w3.org/TR/shacl/ | Task 1: node shapes, `sh:maxInclusive`, validation reports |
+| The in-repo worked examples | Course staff | `semantic/ground_execution.py`, `semantic/shapes.ttl`, `semantic/ontology/hw3-ontology.ttl` | Task 1: the patterns you are asked to imitate |
 
 ### Recommended
 
 | Resource | Author / Org | Link | Relevant to |
 |---|---|---|---|
 | PyBullet Quickstart Guide | Bullet Physics | https://pybullet.org | Understanding the simulation harness |
-| RDF 1.1 Turtle | W3C | https://www.w3.org/TR/turtle/ | Task 4: the syntax you write |
-| Apache Jena documentation | Apache Software Foundation | https://jena.apache.org | Task 4: the validator used by `run_task4.sh` |
+| RDF 1.1 Turtle | W3C | https://www.w3.org/TR/turtle/ | Task 1: the syntax you write |
+| Apache Jena documentation | Apache Software Foundation | https://jena.apache.org | Task 1: the validator used by `run_task1.sh` |
 
 ### Optional
 
@@ -400,10 +414,10 @@ Ask questions through the course's announced channel (course page / forum / TA o
 - Operating system and version
 - `python --version` and the active conda environment
 - `pip list | grep -Ei 'pybullet|numpy|scipy'`
-- `java -version` (for Task 4 issues)
+- `java -version` (for Task 1 issues)
 - The exact command you ran and the directory you ran it from
 - The **complete** error message or traceback (copied as text)
-- For Task 4: the relevant files from `semantic/output/`
+- For Task 1: the relevant files from `semantic/output/`
 - Steps to reproduce, and whether the visible test cases pass on your machine
 
 Reports with this information can usually be answered in one round trip; reports without it will be bounced back for details.

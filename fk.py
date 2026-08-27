@@ -14,7 +14,7 @@ JACOBIAN_SCORE_MAX = 10.0
 JACOBIAN_ERROR_THRESH = 0.05
 FK_SCORE_MAX = 10.0
 FK_ERROR_THRESH = 0.005
-TASK1_SCORE_MAX = JACOBIAN_SCORE_MAX + FK_SCORE_MAX
+TASK2_SCORE_MAX = JACOBIAN_SCORE_MAX + FK_SCORE_MAX
 
 def cross(a : np.ndarray, b : np.ndarray) -> np.ndarray :
     return np.cross(a, b)
@@ -96,7 +96,7 @@ def score_fk(robot, testcase_files : str, visualize : bool=False):
                         textSize = 1.0,
                         lifeTime = 0)
 
-    print("============================ Task 1 : Forward Kinematic ============================\n")
+    print("============================ Task 2 : Forward Kinematic ============================\n")
     for file_id, testcase_file in enumerate(testcase_files):
 
         f_in = open(testcase_file, 'r')
@@ -111,7 +111,7 @@ def score_fk(robot, testcase_files : str, visualize : bool=False):
 
         cases_num = len(fk_dict['joint_poses'])
 
-        penalty = (TASK1_SCORE_MAX / testcase_file_num) / (0.3 * cases_num)
+        penalty = (TASK2_SCORE_MAX / testcase_file_num) / (0.3 * cases_num)
 
         for i in range(cases_num):
             your_pose, your_jacobian = your_fk(dh_params, joint_poses[i], robot._base_position)

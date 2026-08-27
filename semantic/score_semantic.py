@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Task 4 scoring script (TA-provided; grading uses the same code).
+"""Task 1 scoring script (TA-provided; grading uses the same code).
 
 Total 30 points — grounding + SHACL:
 
@@ -12,14 +12,14 @@ Total 30 points — grounding + SHACL:
        - target_near has no problem flag (+2)
        - no JOINT_LIMIT_VIOLATION (+2)
     S3 YOUR shapes.ttl vs TA dataset + answer key  10 pts
-       Your shapes.ttl validates the TA-provided 24-record execution dataset
+       Your shapes.ttl validates the TA-provided 30-record execution dataset
        (ta-faulty-execution.ttl). Each record's flag set must match the
        answer key (ta-answer-key.json) exactly: no false positives and no
        false negatives.
        Score = 8 × (correct faulty cases / all faulty cases)
              + 2 × (correct clean cases / all clean cases).
 
-Invoked automatically by STEP 5 of run_task4.sh.
+Invoked automatically by STEP 5 of run_task1.sh.
 """
 
 import json
@@ -131,12 +131,12 @@ def main():
 
     # ---------------- summary ----------------
     print('=' * 70)
-    print('  Task 4 : Semantic Grounding (REUSE) + SHACL Validation')
+    print('  Task 1 : Semantic Grounding (REUSE) + SHACL Validation')
     print('=' * 70)
     for line in report:
         print('  ' + line)
     print('-' * 70)
-    print('  Your Task 4 Score : {:.1f} / 30.0'.format(total))
+    print('  Your Task 1 Score : {:.1f} / 30.0'.format(total))
     print('=' * 70)
     sys.exit(0 if total >= 29.9 else 1)
 

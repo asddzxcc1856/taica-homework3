@@ -301,21 +301,23 @@
       <p class="lede">Build the kinematic core of a UR5 robot arm, use it in a pick-and-place state machine, then
         represent and validate the execution as a semantic knowledge graph.</p>
     </header>
-    <nav aria-label="Page sections"><a href="#overview">Overview</a><a href="#setup">Setup</a><a href="#task1">Task
-        1</a><a href="#task2">Task 2</a><a href="#task3">Task 3</a><a href="#task4">Task 4</a><a
+    <nav aria-label="Page sections"><a href="#overview">Overview</a><a href="#setup">Setup</a><a href="#task4">Task
+        1</a><a href="#task1">Task 2</a><a href="#task2">Task 3</a><a href="#task3">Task 4</a><a
         href="#submission">Submission</a></nav>
     <section id="overview">
       <h2>What you will build</h2>
       <p class="intro">This homework connects numerical robot kinematics with a complete manipulation pipeline and
-        structured semantic data. Complete the tasks in order: later tasks directly use the functions you implement
-        earlier.</p>
+        structured semantic data. Complete the tasks in order: the semantic layer comes FIRST (built on TA reference
+        solvers, no FK/IK code needed), so you know the checked data classes, forms, and expected results before
+        implementing any algorithm — and while implementing Tasks 2–3 you can re-run Task 1 with <code>--own</code>
+        for immediate semantic feedback on your own solvers.</p>
       <div class="layers">
-        <div class="layer"><b>1. Kinematics</b><span>Implement forward kinematics (FK) and iterative inverse kinematics
+        <div class="layer"><b>1. Semantics</b><span>Ground robot specifications and FK/IK executions in RDF, then
+            validate them with SHACL — built first, on TA reference data.</span></div>
+        <div class="layer"><b>2. Kinematics</b><span>Implement forward kinematics (FK) and iterative inverse kinematics
             (IK) for the six-joint UR5.</span></div>
-        <div class="layer"><b>2. Manipulation</b><span>Use your FK and IK inside a deterministic finite-state machine
+        <div class="layer"><b>3. Manipulation</b><span>Use your FK and IK inside a deterministic finite-state machine
             for pick-and-place episodes.</span></div>
-        <div class="layer"><b>3. Semantics</b><span>Ground robot specifications and FK/IK executions in RDF, then
-            validate them with SHACL.</span></div>
       </div>
       <div class="table-wrap">
         <table>
@@ -354,7 +356,7 @@
               <td>4</td>
               <td>Semantic grounding + SHACL</td>
               <td><code>semantic/ground_execution.py</code>, <code>semantic/shapes.ttl</code></td>
-              <td><code>bash semantic/run_task4.sh</code></td>
+              <td><code>bash semantic/run_task1.sh</code></td>
               <td>30</td>
             </tr>
           </tbody>
@@ -369,108 +371,18 @@
 conda activate taica-hw3
 pip install pybullet numpy scipy</pre>
         </li>
-        <li>For Task 4, install JDK 11 or later and verify that <code>java</code> and <code>javac</code> are available.
+        <li>For Task 1, install JDK 11 or later and verify that <code>java</code> and <code>javac</code> are available.
           <pre>sudo apt-get -y install openjdk-11-jdk
 java -version &amp;&amp; javac -version</pre>
         </li>
-        <li>Run all commands from the repository root. The first Task 4 run downloads Apache Jena 4.10.0 into
+        <li>Run all commands from the repository root. The first Task 1 run downloads Apache Jena 4.10.0 into
           <code>semantic/.cache/</code>; later runs use the cached copy.</li>
       </ol>
       <div class="callout"><strong>Use the supplied model.</strong> The D-H parameter table in <code>fk.py</code>
         follows this repository's UR5 URDF and may differ from tables found online. Always use the provided table.</div>
     </section>
-    <section id="task1">
-      <div class="task">TASK 1 · 20 POINTS</div>
-      <h2>Forward Kinematics</h2>
-      <p class="intro">Implement the UR5 forward-kinematics function using the classic D-H convention. Your result must
-        provide both the end-effector pose and the geometric Jacobian.</p>
-      <h3>Implement</h3>
-      <ol class="steps">
-        <li>Open <code>fk.py</code> and review <code>get_ur5_DH_params()</code>.</li>
-        <li>Implement <code>your_fk(DH_params, q, base_pos)</code>.</li>
-        <li>Return <code>(pose_7d, jacobian)</code>: the pose is <code>[x, y, z, qx, qy, qz, qw]</code> and the Jacobian
-          is a 6×6 geometric Jacobian.</li>
-        <li>Do not call PyBullet APIs for the calculation, and do not modify the supplied adjustment block at the end of
-          the function.</li>
-      </ol>
-      <h3>Verify</h3>
-      <pre>python fk.py            # easy, medium, and hard test cases
-python fk.py -g         # optional PyBullet GUI
-python fk.py -g -vp     # GUI with end-effector pose visualization</pre>
-      <p>Both the pose and Jacobian reports should have an error count of zero for every visible test file. Hidden test
-        cases are also used for grading.</p>
-      <div class="callout"><strong>Jacobian reminder.</strong> For a revolute joint, use the preceding frame axis: the
-        linear component is <code>z(i-1) × (p_end − p(i-1))</code>, and the angular component is <code>z(i-1)</code>.
-      </div>
-    </section>
-    <section id="task2">
-      <div class="task">TASK 2 · 40 POINTS</div>
-      <h2>Inverse Kinematics</h2>
-      <p class="intro">Implement an iterative, Jacobian-based IK solver. The solver will be used with its default
-        arguments during grading, so tune those defaults carefully.</p>
-      <h3>Implement</h3>
-      <ol class="steps">
-        <li>Open <code>ik.py</code> and implement <code>your_ik(robot_id, new_pose, base_pos, ...)</code>.</li>
-        <li>Use your own <code>your_fk()</code> and Jacobian in each iteration. Damped least squares or a pseudo-inverse
-          method are appropriate.</li>
-        <li>Compute both translational and rotational pose error, apply a stable update, and respect the supplied joint
-          limits.</li>
-        <li>You may inspect <code>pybullet_ik()</code> as a reference, but your solution must not call PyBullet IK APIs.
-        </li>
-      </ol>
-      <h3>Verify</h3>
-      <pre>python ik.py</pre>
-      <p>The three visible test sets should report zero errors, with mean positional error in the 10<sup>−3</sup> range.
-        If results fluctuate, review damping, step rate, stopping threshold, iteration count, and warm-start behavior.
-      </p>
-    </section>
-    <section id="task3">
-      <div class="task">TASK 3 · 10 POINTS</div>
-      <h2>FSM Manipulation Pipeline</h2>
-      <p class="intro">Your kinematics now control ten seeded UR5 pick-and-place episodes. This is an integration task:
-        <code>fsm_task.py</code> is provided and should not be changed.</p>
-      <h3>State flow</h3>
-      <pre>MOVE_TO_PREPICK → DESCEND_TO_PICK → GRASP → LIFT
-  → MOVE_TO_PREPLACE → DESCEND_TO_PLACE → RELEASE → RETREAT
-  → VERIFY → SUCCESS / FAILURE</pre>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Validation</th>
-              <th>Requirement</th>
-              <th>Failure message</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>IK</td>
-              <td>After position control, the achieved end-effector position is within 3 cm of the commanded target.
-              </td>
-              <td><code>IK_MISS in &lt;STATE&gt;</code></td>
-            </tr>
-            <tr>
-              <td>FK</td>
-              <td>Your FK, evaluated on measured joint angles, agrees with the simulator end-effector position within 1
-                cm.</td>
-              <td><code>FK_MISMATCH in &lt;STATE&gt;</code></td>
-            </tr>
-            <tr>
-              <td>Task events</td>
-              <td>The gripper must contact, grasp, release, and place the block within 6 cm of the goal.</td>
-              <td><code>NO_CONTACT</code>, <code>GRASP_FAILED</code>, or <code>PLACE_MISS</code></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-      <h3>Run</h3>
-      <pre>python fsm_task.py
-python fsm_task.py -g    # optional GUI</pre>
-      <p>A complete result reports ten successful episodes and a total score of <code>10.000 / 10.000</code>. Failure
-        names help identify which state exposes the kinematics issue.</p>
-    </section>
     <section id="task4">
-      <div class="task">TASK 4 · 30 POINTS</div>
+      <div class="task">TASK 1 · 30 POINTS</div>
       <h2>Semantic Grounding (REUSE) &amp; SHACL Validation</h2>
       <p class="intro">Convert the numerical FK/IK execution process into structured RDF, then use SHACL to discover
         invalid or problematic executions directly from those values.</p>
@@ -520,23 +432,121 @@ python fsm_task.py -g    # optional GUI</pre>
       </ol>
       <h3>Part B: write SHACL shapes</h3>
       <p>The worked FK shape flags <code>FK_INACCURATE</code> when pose error is greater than <code>0.005</code>. Add
-        two shapes for <code>hw3:IKComputation</code>:</p>
+        three shapes:</p>
       <ul>
-        <li><code>hw3:hasTargetDistance</code> must be at most <code>0.90</code>; its message must start with
-          <code>ARM_OUT_OF_RANGE:</code>.</li>
-        <li><code>hw3:hasResidual</code> must be at most <code>0.02</code>; its message must start with
-          <code>NO_CONVERGENCE:</code>.</li>
+        <li>For <code>hw3:IKComputation</code>: <code>hw3:hasTargetDistance</code> must be at most <code>0.90</code>;
+          its message must start with <code>ARM_OUT_OF_RANGE:</code>.</li>
+        <li>For <code>hw3:IKComputation</code>: <code>hw3:hasResidual</code> must be at most <code>0.02</code>; its
+          message must start with <code>NO_CONVERGENCE:</code>.</li>
+        <li>For <code>soma:JointState</code>: the angle (<code>soma:hasJointPosition</code>) must lie within its own
+          joint's limits (<code>hw3:hasJointLowerLimit</code> / <code>hw3:hasJointUpperLimit</code>, reached via
+          <code>hw3:isStateOfJoint</code>); its message must start with <code>JOINT_LIMIT_VIOLATION:</code>. SHACL Core
+          cannot compare values from two different nodes, so this shape uses a <strong>SHACL-SPARQL</strong> constraint
+          (<code>sh:sparql</code> with <code>SELECT $this</code>); the <code>sh:prefixes</code> declaration is provided
+          in the file.</li>
       </ul>
-      <div class="callout"><strong>Thresholds are inclusive.</strong> Use <code>sh:maxInclusive</code>, not
-        <code>sh:maxExclusive</code>. Records exactly at 0.90 m, 0.02 m, or 0.005 m are conforming.</div>
+      <div class="callout"><strong>Boundaries are inclusive.</strong> Use <code>sh:maxInclusive</code>, not
+        <code>sh:maxExclusive</code> — records exactly at 0.90 m, 0.02 m, or 0.005 m are conforming. Joint limits are
+        inclusive too: an angle exactly at a limit is legal, so the SPARQL <code>FILTER</code> must use strict
+        <code>&lt;</code> / <code>&gt;</code>.</div>
       <h3>Run and interpret the results</h3>
-      <pre>bash semantic/run_task4.sh --group &lt;your-group-id&gt;</pre>
+      <pre>bash semantic/run_task1.sh --group &lt;your-group-id&gt;</pre>
       <p>The script checks the grounding structure, validates your generated <code>data.ttl</code>, validates the
-        24-record TA dataset, and scores the results. With a correct implementation, <code>target_mid</code> and
+        30-record TA dataset, and scores the results. With a correct implementation, <code>target_mid</code> and
         <code>target_far</code> are flagged as out of range, while <code>target_near</code> stays clean.</p>
       <p>If the structural check fails, inspect <code>semantic/output/ta-validation.ttl</code>. If the TA-data check
         differs from the answer key, the scorer prints each <code>expected [...] , got [...]</code> mismatch. Check the
         exact message prefixes and thresholds first.</p>
+    </section>
+    <section id="task1">
+      <div class="task">TASK 2 · 20 POINTS</div>
+      <h2>Forward Kinematics</h2>
+      <p class="intro">Implement the UR5 forward-kinematics function using the classic D-H convention. Your result must
+        provide both the end-effector pose and the geometric Jacobian.</p>
+      <h3>Implement</h3>
+      <ol class="steps">
+        <li>Open <code>fk.py</code> and review <code>get_ur5_DH_params()</code>.</li>
+        <li>Implement <code>your_fk(DH_params, q, base_pos)</code>.</li>
+        <li>Return <code>(pose_7d, jacobian)</code>: the pose is <code>[x, y, z, qx, qy, qz, qw]</code> and the Jacobian
+          is a 6×6 geometric Jacobian.</li>
+        <li>Do not call PyBullet APIs for the calculation, and do not modify the supplied adjustment block at the end of
+          the function.</li>
+      </ol>
+      <h3>Verify</h3>
+      <pre>python fk.py            # easy, medium, and hard test cases
+python fk.py -g         # optional PyBullet GUI
+python fk.py -g -vp     # GUI with end-effector pose visualization</pre>
+      <p>Both the pose and Jacobian reports should have an error count of zero for every visible test file. Hidden test
+        cases are also used for grading.</p>
+      <div class="callout"><strong>Jacobian reminder.</strong> For a revolute joint, use the preceding frame axis: the
+        linear component is <code>z(i-1) × (p_end − p(i-1))</code>, and the angular component is <code>z(i-1)</code>.
+      </div>
+    </section>
+    <section id="task2">
+      <div class="task">TASK 3 · 40 POINTS</div>
+      <h2>Inverse Kinematics</h2>
+      <p class="intro">Implement an iterative, Jacobian-based IK solver. The solver will be used with its default
+        arguments during grading, so tune those defaults carefully.</p>
+      <h3>Implement</h3>
+      <ol class="steps">
+        <li>Open <code>ik.py</code> and implement <code>your_ik(robot_id, new_pose, base_pos, ...)</code>.</li>
+        <li>Use your own <code>your_fk()</code> and Jacobian in each iteration. Damped least squares or a pseudo-inverse
+          method are appropriate.</li>
+        <li>Compute both translational and rotational pose error, apply a stable update, and respect the supplied joint
+          limits.</li>
+        <li>You may inspect <code>pybullet_ik()</code> as a reference, but your solution must not call PyBullet IK APIs.
+        </li>
+      </ol>
+      <h3>Verify</h3>
+      <pre>python ik.py</pre>
+      <p>The three visible test sets should report zero errors, with mean positional error in the 10<sup>−3</sup> range.
+        If results fluctuate, review damping, step rate, stopping threshold, iteration count, and warm-start behavior.
+      </p>
+    </section>
+    <section id="task3">
+      <div class="task">TASK 4 · 10 POINTS</div>
+      <h2>FSM Manipulation Pipeline</h2>
+      <p class="intro">Your kinematics now control ten seeded UR5 pick-and-place episodes. This is an integration task:
+        <code>fsm_task.py</code> is provided and should not be changed.</p>
+      <h3>State flow</h3>
+      <pre>MOVE_TO_PREPICK → DESCEND_TO_PICK → GRASP → LIFT
+  → MOVE_TO_PREPLACE → DESCEND_TO_PLACE → RELEASE → RETREAT
+  → VERIFY → SUCCESS / FAILURE</pre>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Validation</th>
+              <th>Requirement</th>
+              <th>Failure message</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>IK</td>
+              <td>After position control, the achieved end-effector position is within 3 cm of the commanded target.
+              </td>
+              <td><code>IK_MISS in &lt;STATE&gt;</code></td>
+            </tr>
+            <tr>
+              <td>FK</td>
+              <td>Your FK, evaluated on measured joint angles, agrees with the simulator end-effector position within 1
+                cm.</td>
+              <td><code>FK_MISMATCH in &lt;STATE&gt;</code></td>
+            </tr>
+            <tr>
+              <td>Task events</td>
+              <td>The gripper must contact, grasp, release, and place the block within 6 cm of the goal.</td>
+              <td><code>NO_CONTACT</code>, <code>GRASP_FAILED</code>, or <code>PLACE_MISS</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <h3>Run</h3>
+      <pre>python fsm_task.py
+python fsm_task.py -g    # optional GUI</pre>
+      <p>A complete result reports ten successful episodes and a total score of <code>10.000 / 10.000</code>. Failure
+        names help identify which state exposes the kinematics issue.</p>
     </section>
     <section id="submission">
       <h2>Submission checklist</h2>
@@ -544,7 +554,7 @@ python fsm_task.py -g    # optional GUI</pre>
         <li><code>fk.py</code> with <code>your_fk()</code> completed</li>
         <li><code>ik.py</code> with <code>your_ik()</code> completed</li>
         <li><code>semantic/ground_execution.py</code> with both TODO functions completed</li>
-        <li><code>semantic/shapes.ttl</code> with the two required problem shapes completed</li>
+        <li><code>semantic/shapes.ttl</code> with the three required problem shapes completed</li>
         <li>A short report with screenshots for all four tasks and an explanation of the SHACL findings in
           <code>output/validation.ttl</code> and <code>output/probe-validation.ttl</code></li>
       </ul>

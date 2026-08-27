@@ -47,5 +47,17 @@
   "ik_case_16": [
     "ARM_OUT_OF_RANGE",
     "NO_CONVERGENCE"
+  ],
+  "jl_case_01": [],
+  "jl_case_02": [],
+  "jl_case_03": [
+    "JOINT_LIMIT_VIOLATION"
+  ],
+  "jl_case_04": [
+    "JOINT_LIMIT_VIOLATION"
+  ],
+  "jl_case_05": [],
+  "jl_case_06": [
+    "JOINT_LIMIT_VIOLATION"
   ]
 }

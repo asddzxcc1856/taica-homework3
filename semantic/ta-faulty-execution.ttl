@@ -1,16 +1,18 @@
 @prefix hw3:   <http://taica.course/hw3/ontology#> .
 @prefix probe: <http://taica.course/hw3/data/probe#> .
+@prefix soma:  <http://www.ease-crc.org/ont/SOMA.owl#> .
 @prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .
 
 # =============================================================================
 # TA-provided IK/FK execution trace dataset (grading; do not modify)
 #
-# Twenty-four execution records, including both clean and faulty cases and
-# threshold-boundary values. Validation of this file using your shapes.ttl must
-# match ta-answer-key.json exactly for every record: no false positives or
-# false negatives. score_semantic.py compares cases individually.
-# Thresholds are inclusive (sh:maxInclusive): values exactly equal to
-# 0.90 / 0.02 / 0.005 conform.
+# 30 records, good and bad mixed, including threshold-boundary values.
+# Your shapes.ttl is validated against this file, and the result is compared
+# record by record with ta-answer-key.json: each record's flag set must
+# match the answer EXACTLY (no false positives, no false negatives).
+# Boundary semantics: numeric thresholds are INCLUSIVE (sh:maxInclusive) —
+# values exactly at 0.90 / 0.02 / 0.005 conform; joint limits are inclusive
+# too — an angle exactly at a limit is legal.
 # =============================================================================
 
 probe:ik_case_01 a hw3:IKComputation ;
@@ -108,4 +110,38 @@ probe:fk_case_07 a hw3:FKComputation ;
 probe:fk_case_08 a hw3:FKComputation ;
     hw3:hasPoseError "0.12"^^xsd:double ;
     hw3:hasJacobianError "0.35"^^xsd:double .
+
+# ---- joint-limit records (for STUDENT TODO 3) ----
+
+probe:jl_joint_a a soma:RevoluteJoint ;
+    hw3:hasJointLowerLimit "-4.712389"^^xsd:double ;
+    hw3:hasJointUpperLimit "-1.570796"^^xsd:double .
+
+probe:jl_joint_b a soma:RevoluteJoint ;
+    hw3:hasJointLowerLimit "-2.3562"^^xsd:double ;
+    hw3:hasJointUpperLimit "-1.0"^^xsd:double .
+
+probe:jl_case_01 a soma:JointState ;
+    soma:hasJointPosition "-3.14"^^xsd:double ;
+    hw3:isStateOfJoint probe:jl_joint_a .
+
+probe:jl_case_02 a soma:JointState ;
+    soma:hasJointPosition "-1.570796"^^xsd:double ;
+    hw3:isStateOfJoint probe:jl_joint_a .
+
+probe:jl_case_03 a soma:JointState ;
+    soma:hasJointPosition "-0.9"^^xsd:double ;
+    hw3:isStateOfJoint probe:jl_joint_a .
+
+probe:jl_case_04 a soma:JointState ;
+    soma:hasJointPosition "-5.1"^^xsd:double ;
+    hw3:isStateOfJoint probe:jl_joint_a .
+
+probe:jl_case_05 a soma:JointState ;
+    soma:hasJointPosition "-1.2"^^xsd:double ;
+    hw3:isStateOfJoint probe:jl_joint_b .
+
+probe:jl_case_06 a soma:JointState ;
+    soma:hasJointPosition "-2.6"^^xsd:double ;
+    hw3:isStateOfJoint probe:jl_joint_b .
 

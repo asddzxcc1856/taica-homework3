@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Task 3 — Finite State Machine manipulation pipeline (TA-provided).
+"""Task 4 — Finite State Machine manipulation pipeline (TA-provided).
 
 Validates YOUR IK and FK inside a complete pick-and-place pipeline —
 no learned model, no dataset, no checkpoint: a deterministic FSM drives
@@ -36,7 +36,7 @@ from fk import your_fk, get_ur5_DH_params
 from ik import your_ik
 
 SIM_TIMESTEP = 1.0 / 240.0
-TASK3_SCORE_MAX = 10.0
+TASK4_SCORE_MAX = 10.0
 NUM_EPISODES = 10
 
 IK_TOL = 0.03       # m: achieved EE position vs commanded target
@@ -201,7 +201,7 @@ def main(args):
               for j in robot._joint_name_to_ids.values()]
     home_quat = np.asarray(robot.get_eef_pose())[3:]
 
-    print('============================ Task 3 : FSM Manipulation Pipeline '
+    print('============================ Task 4 : FSM Manipulation Pipeline '
           '============================\n')
     print('FSM: ' + ' -> '.join(STATES) + '\n')
 
@@ -241,10 +241,10 @@ def main(args):
         p.removeBody(block_id)
         p.removeBody(marker)
 
-    score = TASK3_SCORE_MAX * successes / NUM_EPISODES
+    score = TASK4_SCORE_MAX * successes / NUM_EPISODES
     print('\n===================================================='
           '================================')
-    print('- Your Total Score : {:.3f} / {:.3f}'.format(score, TASK3_SCORE_MAX))
+    print('- Your Total Score : {:.3f} / {:.3f}'.format(score, TASK4_SCORE_MAX))
     print('====================================================='
           '===============================')
     p.disconnect()

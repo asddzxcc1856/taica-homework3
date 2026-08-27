@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Task 4 / REUSE — Ground your FK/IK execution process into semantic data.
+"""Task 1 / REUSE — Ground an FK/IK execution process into semantic data.
 
-Move the execution data from Task 1 (FK) and Task 2 (IK) into a semantic
-representation. Reuse standard ontologies (IEEE 1872 CORA robots, SOMA
+This task comes FIRST: by default the execution data is produced by the TA
+reference solvers (ground-truth FK poses + the simulator IK), so no student
+FK/IK implementation is needed. After finishing Tasks 2-3 you can re-run
+with --own to ground YOUR solvers' execution instead. Move that execution
+data into a semantic representation. Reuse standard ontologies (IEEE 1872 CORA robots, SOMA
 joints/joint-states/poses, IEEE 1872 POS positions, and QUDT units; local
 stubs are in ontology/hw3-ontology.ttl), and serialize numeric results as
 structured RDF in semantic/output/data.ttl.
@@ -17,7 +20,7 @@ STUDENT TODO in this file:
 
 Run (inside the taica-hw3 conda environment):
     python semantic/ground_execution.py --group <your group id>
-    python semantic/ground_execution.py --reference    # pipeline smoke test
+    python semantic/ground_execution.py --group ... --own   # after Tasks 2-3: ground YOUR FK/IK
 """
 
 import json
@@ -167,11 +170,18 @@ def main():
         gt = json.load(f)
     base_pos = [-0.2, 0.13, 0.6]  # ur5Env default base position
     for i, q in enumerate(gt['joint_poses'][:NUM_FK_CASES]):
-        pose, jacobian = your_fk(dh_params, q, base_pos)
-        pose_error = round(float(np.linalg.norm(
-            np.asarray(pose) - np.asarray(gt['poses'][i]))), 6)
-        jacobian_error = round(float(np.linalg.norm(
-            np.asarray(jacobian) - np.asarray(gt['jacobian'][i]))), 6)
+        if args.own:
+            pose, _jac = your_fk(dh_params, q, base_pos)
+            pose_error = round(float(np.linalg.norm(
+                np.asarray(pose) - np.asarray(gt['poses'][i]))), 6)
+            jacobian_error = round(float(np.linalg.norm(
+                np.asarray(_jac) - np.asarray(gt['jacobian'][i]))), 6)
+        else:
+            # Task 1 default: TA reference execution — the course ground
+            # truth IS the reference FK, so the errors are zero.
+            pose = list(gt['poses'][i])
+            pose_error = 0.0
+            jacobian_error = 0.0
         print('[FK] case {} -> pose_err={:.6f} jac_err={:.6f}'.format(
             i, pose_error, jacobian_error))
         lines += fk_computation_to_triples(i, q, list(pose),
@@ -184,15 +194,19 @@ def main():
     for target in SHARED_TARGETS:
         target_pose_7d = list(target['position']) + list(home_quat)
         common.reset_arm(robot, HOME_JOINTS)
-        if args.reference:
-            joints = list(np.asarray(
-                pybullet_ik(robot.robot_id, target_pose_7d))[:6])
-            eef_pos = common.sim_eef_pose(robot, joints)[:3]
-        else:
+        if args.own:
             joints = list(your_ik(robot.robot_id, target_pose_7d,
                                   base_pos=base_pos))
             eef_pos, _ = your_fk(dh_params, joints, base_pos)
             eef_pos = eef_pos[:3]
+        else:
+            # Task 1 default: TA reference IK (simulator solver),
+            # clipped to the course joint limits exactly like your_ik.
+            joints = list(np.asarray(
+                pybullet_ik(robot.robot_id, target_pose_7d))[:6])
+            joints = [min(max(j, lo), hi)
+                      for j, (lo, hi) in zip(joints, JOINT_LIMITS)]
+            eef_pos = common.sim_eef_pose(robot, joints)[:3]
         status, residual = common.classify_ik_result(
             eef_pos, target['position'], base_pos)
         distance = round(float(np.linalg.norm(

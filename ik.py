@@ -15,7 +15,7 @@ from hw3_utils.bullet_utils import draw_coordinate, get_matrix_from_pose, get_po
 from fk import your_fk, get_ur5_DH_params
 
 SIM_TIMESTEP = 1.0 / 240.0
-TASK2_SCORE_MAX = 40
+TASK3_SCORE_MAX = 40
 IK_ERROR_THRESH = 0.02
 
 def cross(a : np.ndarray, b : np.ndarray) -> np.ndarray :
@@ -95,7 +95,7 @@ def your_ik(robot_id, new_pose : list or tuple or np.ndarray,
 def score_ik(robot, testcase_files : str, visualize : bool=False):
 
     testcase_file_num = len(testcase_files)
-    ik_score = [TASK2_SCORE_MAX / testcase_file_num for _ in range(testcase_file_num)]
+    ik_score = [TASK3_SCORE_MAX / testcase_file_num for _ in range(testcase_file_num)]
     ik_error_cnt = [0 for _ in range(testcase_file_num)]
 
 
@@ -105,7 +105,7 @@ def score_ik(robot, testcase_files : str, visualize : bool=False):
                         textSize = 1.0,
                         lifeTime = 0)
 
-    print("============================ Task 2 : Inverse Kinematic ============================\n")
+    print("============================ Task 3 : Inverse Kinematic ============================\n")
     for file_id, testcase_file in enumerate(testcase_files):
 
         f_in = open(testcase_file, 'r')
@@ -117,7 +117,7 @@ def score_ik(robot, testcase_files : str, visualize : bool=False):
         poses = ik_dict['next_poses']
         cases_num = len(ik_dict['current_joint_poses'])
         
-        penalty = (TASK2_SCORE_MAX / testcase_file_num) / (0.3 * cases_num)
+        penalty = (TASK3_SCORE_MAX / testcase_file_num) / (0.3 * cases_num)
         ik_errors = []
 
         for i in range(cases_num):
@@ -167,7 +167,7 @@ def score_ik(robot, testcase_files : str, visualize : bool=False):
                     "- Mean Error : {:0.06f}\n".format(np.mean(ik_errors)) + \
                     "- Error Count : {:3d} / {:3d}\n".format(ik_error_cnt[file_id], cases_num) + \
                     "- Your Score Of Inverse Kinematic : {:00.03f} / {:00.03f}\n".format(
-                            ik_score[file_id], TASK2_SCORE_MAX / testcase_file_num)
+                            ik_score[file_id], TASK3_SCORE_MAX / testcase_file_num)
         
         print(score_msg)
     p.removeAllUserDebugItems()
@@ -177,7 +177,7 @@ def score_ik(robot, testcase_files : str, visualize : bool=False):
         total_ik_score += ik_score[file_id]
     
     print("====================================================================================")
-    print("- Your Total Score : {:00.03f} / {:00.03f}".format(total_ik_score , TASK2_SCORE_MAX))
+    print("- Your Total Score : {:00.03f} / {:00.03f}".format(total_ik_score , TASK3_SCORE_MAX))
     print("====================================================================================")
 
 def main(args):

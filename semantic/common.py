@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Shared constants and helpers for the Task 4 grounding scripts (TA-provided).
+"""Shared constants and helpers for the Task 1 grounding scripts (TA-provided).
 
 The three per-task grounding scripts (ground_task1_fk.py, ground_task2_ik.py,
 ground_task3_insertion.py) each produce their own knowledge graph, but they
@@ -44,7 +44,7 @@ IK_SOLVED_THRESH = 0.02       # residual threshold for SOLVED (m)
 FK_POSE_ERROR_THRESH = 0.005  # Task 1 pose error threshold (course value)
 FK_JACOBIAN_ERROR_THRESH = 0.05  # Task 1 Jacobian error threshold (course value)
 
-# Joint limits consistent with ik.py; grounded into triples in Task 4
+# Joint limits consistent with ik.py; grounded into triples in Task 1
 JOINT_LIMITS = [
     [-3 * np.pi / 2, -np.pi / 2],   # joint1
     [-2.3562, -1.0],                # joint2
@@ -70,9 +70,11 @@ def make_arg_parser(description):
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument('--group', default='student-group-00',
                         help='provenance id written to hw3:producedBy')
-    parser.add_argument('--reference', action='store_true',
-                        help='use pybullet reference FK/IK instead of '
-                             'your_fk/your_ik (pipeline smoke test only)')
+    parser.add_argument('--own', action='store_true',
+                        help='use YOUR your_fk/your_ik to generate the '
+                             'execution data (rerun after Tasks 2-3); the '
+                             'default uses the TA reference solvers so '
+                             'Task 1 works before any implementation')
     return parser
 
 
