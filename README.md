@@ -6,6 +6,8 @@ NYCU Physical AI / TAICA — UR5 Kinematics + FSM Manipulation + Semantic Knowle
 > Open [docs/hw3-student-guide.html](docs/hw3-student-guide.html) in your browser.
 >
 > **Official Specification** — Covers the assignment objectives, step-by-step installation instructions, detailed task procedures, and grading criteria: [SPEC.md](SPEC.md)
+>
+> **Full Student Guide** — Self-contained handbook (overview, prerequisites, installation, every task in detail, testing, submission, troubleshooting, FAQ): [STUDENT_GUIDE.md](STUDENT_GUIDE.md)
 
 ## Learning Objectives
 
