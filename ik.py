@@ -106,6 +106,7 @@ def score_ik(robot, testcase_files : str, visualize : bool=False):
                         lifeTime = 0)
 
     print("============================ Task 3 : Inverse Kinematic ============================\n")
+    diag_fail, diag_sample = [], []
     for file_id, testcase_file in enumerate(testcase_files):
 
         f_in = open(testcase_file, 'r')
@@ -160,6 +161,20 @@ def score_ik(robot, testcase_files : str, visualize : bool=False):
                 ik_score[file_id] -= penalty
                 ik_error_cnt[file_id] += 1
 
+            # Task 1 bridge: keep failing cases (plus one clean sample per
+            # file) for the SHACL diagnosis printed after the score.
+            shoulder = np.asarray(robot._base_position) + [0.0, 0.0, 0.0892]
+            diag_rec = ('diag_{}_{:03d}'.format(
+                            test_case_name.replace('ik_test_case_', '').replace('.json', ''), i),
+                        list(your_joint_poses)[:6],
+                        'MISS' if ik_error > IK_ERROR_THRESH else 'SOLVED',
+                        float(ik_error),
+                        float(np.linalg.norm(np.asarray(gt_pose[:3]) - shoulder)))
+            if ik_error > IK_ERROR_THRESH:
+                diag_fail.append(diag_rec)
+            elif i == 0:
+                diag_sample.append(diag_rec)
+
         ik_score[file_id] = 0.0 if ik_score[file_id] < 0.0 else ik_score[file_id]
         ik_errors = np.asarray(ik_errors)
 
@@ -179,6 +194,17 @@ def score_ik(robot, testcase_files : str, visualize : bool=False):
     print("====================================================================================")
     print("- Your Total Score : {:00.03f} / {:00.03f}".format(total_ik_score , TASK3_SCORE_MAX))
     print("====================================================================================")
+
+    # Task 1 bridge: validate the executions above with YOUR grounding
+    # functions + YOUR shapes.ttl (fail-soft; scores are already final).
+    try:
+        import sys
+        sys.path.insert(0, os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'semantic'))
+        from diagnose import diagnose
+        diagnose('Task 3 IK', ik_records=diag_fail + diag_sample)
+    except Exception as exc:
+        print('(semantic diagnosis unavailable: {})'.format(exc))
 
 def main(args):
 

@@ -309,8 +309,10 @@
       <p class="intro">This homework connects numerical robot kinematics with a complete manipulation pipeline and
         structured semantic data. Complete the tasks in order: the semantic layer comes FIRST (built on TA reference
         solvers, no FK/IK code needed), so you know the checked data classes, forms, and expected results before
-        implementing any algorithm — and while implementing Tasks 2–3 you can re-run Task 1 with <code>--own</code>
-        for immediate semantic feedback on your own solvers.</p>
+        implementing any algorithm. The connection is automatic: every run of Tasks 2–4 feeds its execution
+        records back through <em>your</em> grounding functions and <em>your</em> <code>shapes.ttl</code> and prints
+        the SHACL problem flags right under the score — immediate semantic feedback from the layer you built
+        (you can also re-run Task 1 with <code>--own</code> for the full pipeline).</p>
       <div class="layers">
         <div class="layer"><b>1. Semantics</b><span>Ground robot specifications and FK/IK executions in RDF, then
             validate them with SHACL — built first, on TA reference data.</span></div>

@@ -38,7 +38,7 @@ In scope: RDF/Turtle authoring with provided serializers, SHACL node shapes (plu
 | 3 | Inverse Kinematics | `ik.py` — `your_ik()` | `python ik.py` | 40 |
 | 4 | FSM Manipulation Pipeline | none (integration check) | `python fsm_task.py` | 10 |
 
-**Why the semantic layer comes first:** in Task 1 you build the knowledge representation and its validation rules before implementing any kinematics — the execution data comes from the TA reference solvers, so you know up front exactly which data classes and forms will be checked and what the expected results are. While implementing Tasks 2–3, re-run the same pipeline with `--own` at any time for immediate semantic feedback on your own solvers; Task 4 then exercises them inside a full manipulation loop.
+**Why the semantic layer comes first:** in Task 1 you build the knowledge representation and its validation rules before implementing any kinematics — the execution data comes from the TA reference solvers, so you know up front exactly which data classes and forms will be checked and what the expected results are. And the connection is automatic: every run of Tasks 2–4 feeds its execution records back through **your** grounding functions and **your** `shapes.ttl` (via the TA-provided `semantic/diagnose.py`) and prints the SHACL problem flags right under the score — immediate semantic feedback from the layer you built. You can additionally re-run the full Task 1 pipeline with `--own` at any time.
 
 ---
 
@@ -231,6 +231,8 @@ python fk.py -g -vp      # optional: also draw your pose (red) vs ground truth (
 
 Pass criterion: **Error Count 0** for both FK and Jacobian on all three files. Tolerances: pose error < 0.005 (L2 over the 7-vector), Jacobian error < 0.05 (matrix L2). Grading uses additional hidden test cases of the same format.
 
+**Semantic feedback:** after the score, the run automatically grounds failing cases (plus one clean sample per file) with **your Task 1 functions** and validates them with **your `shapes.ttl`** — inaccurate cases appear as `FK_INACCURATE` (and out-of-limit inputs as `JOINT_LIMIT_VIOLATION`) flags under the score. If Task 1 is unfinished it prints a skip notice; the score is unaffected.
+
 ### Task 3 — Inverse Kinematics (40 points)
 
 **Objective:** solve joint angles for a target end-effector pose using your own FK and Jacobian.
@@ -256,6 +258,8 @@ python ik.py
 ```
 
 Pass criterion: Error Count 0 on all three files (threshold: the executed end-effector pose must land within 0.02 m of the target) and mean error around 10⁻³ m. The three difficulty levels differ in the step size between consecutive targets — if easy passes and hard fails, revisit your step rate, damping, and iteration budget.
+
+**Semantic feedback:** failing IK cases are automatically grounded and validated by your Task 1 layer — flagged as `NO_CONVERGENCE` / `ARM_OUT_OF_RANGE` / `JOINT_LIMIT_VIOLATION` under the score, using exactly the vocabulary and thresholds you defined before implementing.
 
 With both solvers done, revisit Task 1: `bash semantic/run_task1.sh --group <id> --own` grounds and validates **your** execution.
 
@@ -288,6 +292,8 @@ python fsm_task.py -g     # watch it in the PyBullet GUI
 
 Pass criterion: `10/10 SUCCESS`, score `10.000 / 10.000`. Failure messages tell you **which state and which check** broke — use them to debug Tasks 2–3 (e.g., `IK_MISS` only on long moves points at solver convergence; `NO_CONTACT` usually means a systematic height error in FK).
 
+**Semantic feedback:** every failing motion (and the first motion, as a clean sample) is grounded and SHACL-validated by your Task 1 layer after the episodes — so each FSM failure also carries its semantic flags (`NO_CONVERGENCE`, `ARM_OUT_OF_RANGE`, `JOINT_LIMIT_VIOLATION`, `FK_INACCURATE`).
+
 
 ---
 
@@ -297,10 +303,10 @@ Pass criterion: `10/10 SUCCESS`, score `10.000 / 10.000`. Failure messages tell 
 2. Install and verify the environment (§4).
 3. Read the Task 1 worked examples (`fk_computation_to_triples`, the FK shape), then implement the two grounding functions and the three shapes.
 4. Run `bash semantic/run_task1.sh --group <id>`; fix issues using the validation reports in `semantic/output/` until it reports 30.0 / 30.0.
-5. Implement `your_fk`; iterate until all visible FK tests report zero errors.
-6. Implement `your_ik`; tune defaults until all visible IK tests pass.
-7. Re-run Task 1 with `--own` — the semantic layer now validates YOUR solvers' execution.
-8. Run `python fsm_task.py`; debug any state-localized failures (they point back at Tasks 2–3).
+5. Implement `your_fk`; iterate until all visible FK tests report zero errors — each run's semantic diagnosis flags failing cases with your Task 1 shapes.
+6. Implement `your_ik`; tune defaults until all visible IK tests pass — watch the `NO_CONVERGENCE` / `ARM_OUT_OF_RANGE` / `JOINT_LIMIT_VIOLATION` flags shrink to zero.
+7. Optionally re-run Task 1 with `--own` — the full pipeline (S1/S2/S3) now validates YOUR solvers' execution.
+8. Run `python fsm_task.py`; debug any state-localized failures (they point back at Tasks 2–3, with semantic flags attached).
 9. Re-run all four commands from a clean state; capture the outputs for your report.
 10. Assemble and submit (§8).
 
@@ -345,6 +351,7 @@ Submission platform, deadline, late policy, and re-submission policy: **announce
 | Arm doesn't move in the Task 1 GUI | Don't edit the visualization block in `score_fk` — the release already handles GUI stepping. |
 | FSM fails with `NO_CONTACT` | Usually a systematic FK height error — check that you didn't modify the `adjustment` block. |
 | `STRUCTURE:` violations in S1 | Open `output/ta-validation.ttl`; each message names the missing property or typing. |
+| `Semantic diagnosis ... skipped` under a Task 2–4 score | Normal before Task 1 is finished (grounding TODOs) or before Jena is cached (run `bash semantic/run_task1.sh` once). Never affects the numeric score. |
 | S3 mismatches | Read the printed `expected/got` lines; verify message prefixes, `sh:maxInclusive`, and the threshold values. |
 | Wrong scores after moving files around | Run all commands from the assignment root directory with the released layout. |
 

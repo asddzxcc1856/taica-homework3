@@ -76,6 +76,8 @@ class FSMPipeline(object):
         self.dh_params = get_ur5_DH_params()
         self.joint_ids = list(robot._joint_name_to_ids.values())
         self.log = []
+        # Task 1 bridge: execution records for the SHACL diagnosis
+        self.diag_fk, self.diag_ik, self._diag_n = [], [], 0
 
     # ---------------- low-level helpers ----------------
     def _step(self, seconds):
@@ -110,9 +112,24 @@ class FSMPipeline(object):
             ik_err = float(np.linalg.norm(ee - np.asarray(position)))
             if ik_err <= IK_TOL:
                 break
-        fk_pose, _ = your_fk(self.dh_params, self._measured_q(), self.base_pos)
+        q_meas = self._measured_q()
+        fk_pose, _ = your_fk(self.dh_params, q_meas, self.base_pos)
         fk_err = float(np.linalg.norm(np.asarray(fk_pose[:3]) - ee))
         self.log.append((state, ik_err, fk_err))
+
+        # Task 1 bridge: failing motions (and the very first motion, as a
+        # clean sample) are grounded and SHACL-validated after the episodes.
+        shoulder = np.asarray(self.base_pos) + [0.0, 0.0, 0.0892]
+        distance = float(np.linalg.norm(np.asarray(position) - shoulder))
+        self._diag_n += 1
+        tag = 'diag_{:02d}_{}'.format(self._diag_n, state.lower())
+        if fk_err > FK_TOL:
+            self.diag_fk.append((tag + '_fk', q_meas, list(fk_pose),
+                                 fk_err, 0.0))
+        if ik_err > IK_TOL:
+            self.diag_ik.append((tag, q_meas, 'MISS', ik_err, distance))
+        elif self._diag_n == 1:
+            self.diag_ik.append((tag, q_meas, 'SOLVED', ik_err, distance))
 
         if fk_err > FK_TOL:
             return 'FK_MISMATCH in {} (fk vs sim = {:.4f} m)'.format(state, fk_err)
@@ -247,6 +264,17 @@ def main(args):
     print('- Your Total Score : {:.3f} / {:.3f}'.format(score, TASK4_SCORE_MAX))
     print('====================================================='
           '===============================')
+
+    # Task 1 bridge: validate the recorded motions with YOUR grounding
+    # functions + YOUR shapes.ttl (fail-soft; the score above is final).
+    try:
+        import sys
+        sys.path.insert(0, os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'semantic'))
+        from diagnose import diagnose
+        diagnose('Task 4 FSM', fk_records=fsm.diag_fk, ik_records=fsm.diag_ik)
+    except Exception as exc:
+        print('(semantic diagnosis unavailable: {})'.format(exc))
     p.disconnect()
 
 

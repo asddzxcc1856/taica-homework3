@@ -97,6 +97,7 @@ def score_fk(robot, testcase_files : str, visualize : bool=False):
                         lifeTime = 0)
 
     print("============================ Task 2 : Forward Kinematic ============================\n")
+    diag_fail, diag_sample = [], []
     for file_id, testcase_file in enumerate(testcase_files):
 
         f_in = open(testcase_file, 'r')
@@ -146,6 +147,17 @@ def score_fk(robot, testcase_files : str, visualize : bool=False):
             if jacobian_error > JACOBIAN_ERROR_THRESH:
                 jacobian_score[file_id] -= penalty
                 jacobian_error_cnt[file_id] += 1
+
+            # Task 1 bridge: keep failing cases (plus one clean sample per
+            # file) for the SHACL diagnosis printed after the score.
+            diag_tag = 'diag_{}_{:03d}'.format(
+                test_case_name.replace('fk_test_case_', '').replace('.json', ''), i)
+            if fk_error > FK_ERROR_THRESH or jacobian_error > JACOBIAN_ERROR_THRESH:
+                diag_fail.append((diag_tag, list(joint_poses[i]),
+                                  list(your_pose), fk_error, jacobian_error))
+            elif i == 0:
+                diag_sample.append((diag_tag, list(joint_poses[i]),
+                                    list(your_pose), fk_error, jacobian_error))
         
         fk_score[file_id] = 0.0 if fk_score[file_id] < 0.0 else fk_score[file_id]
         jacobian_score[file_id] = 0.0 if jacobian_score[file_id] < 0.0 else jacobian_score[file_id]
@@ -169,6 +181,17 @@ def score_fk(robot, testcase_files : str, visualize : bool=False):
     print("- Your Total Score : {:00.03f} / {:00.03f}".format(
         total_fk_score + total_jacobian_score, FK_SCORE_MAX + JACOBIAN_SCORE_MAX))
     print("====================================================================================")
+
+    # Task 1 bridge: validate the executions above with YOUR grounding
+    # functions + YOUR shapes.ttl (fail-soft; scores are already final).
+    try:
+        import sys
+        sys.path.insert(0, os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), 'semantic'))
+        from diagnose import diagnose
+        diagnose('Task 2 FK', fk_records=diag_fail + diag_sample)
+    except Exception as exc:
+        print('(semantic diagnosis unavailable: {})'.format(exc))
 
 def main(args):
 
